@@ -20,8 +20,8 @@ func main() {
 		w.Write([]byte("root."))
 	})
 
-	a := handlers.AuthorsHandler{e}
-	b := handlers.BookHandler{e}
+	a := handlers.NewAuthorsHandler(e)
+	b := handlers.NewBookHandler(e)
 
 	r.Get("/books", b.Index)
 	r.Post("/books", b.AddBook)

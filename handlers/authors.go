@@ -2,35 +2,28 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/wmolicki/bookler/config"
+
+	"github.com/wmolicki/bookler/models"
 )
 
 type AuthorsHandler struct {
-	Env *config.Env
+	as *models.AuthorService
+}
+
+func NewAuthorsHandler(env *config.Env) *AuthorsHandler {
+	as := models.NewAuthorService(env)
+	as.DestructiveReset()
+	return &AuthorsHandler{as}
 }
 
 func (a *AuthorsHandler) Index(w http.ResponseWriter, r *http.Request) {
-	query := `SELECT a.id, a.name, COUNT(ba.book_id) as book_count, ba.created_on as created_on 
-              FROM author a JOIN book_author ba on a.id = ba.author_id
-              GROUP BY (a.id) ORDER BY a.name, a.created_on;`
-	db := a.Env.DB
-
-	var authors []struct {
-		Id        int
-		Name      string
-		CreatedOn time.Time `db:"created_on"`
-		BookCount int       `db:"book_count"`
-	}
-
-	err := db.Select(&authors, query)
+	authors, err := a.as.GetAuthors()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Printf("could not query for authors: %v", err)
-		w.Write([]byte("something went wrong"))
+		internalServerError(w, fmt.Sprintf("could not query for authors: %v", err))
 		return
 	}
 
