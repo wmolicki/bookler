@@ -21,7 +21,8 @@ func NewAuthorsHandler(env *config.Env) *AuthorsHandler {
 }
 
 func (a *AuthorsHandler) Index(w http.ResponseWriter, r *http.Request) {
-	authors, err := a.as.GetAuthors()
+	authors, err := a.as.GetList()
+
 	if err != nil {
 		internalServerError(w, fmt.Sprintf("could not query for authors: %v", err))
 		return

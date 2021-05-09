@@ -1,22 +1,25 @@
 package config
 
 import (
+	"fmt"
 	"log"
+	"os"
 
-	"gorm.io/gorm/logger"
+	"github.com/jmoiron/sqlx"
 
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
+	_ "github.com/jmoiron/sqlx"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Env struct {
-	DB *gorm.DB
+	DB *sqlx.DB
 }
 
 func NewEnv() *Env {
-	db, err := gorm.Open(sqlite.Open("./books_v2.db"), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
+	db, err := sqlx.Open("sqlite3", "./books_v2.db")
+
+	fmt.Println(os.Getwd())
+
 	if err != nil {
 		log.Fatalf("could not open db: %v", err)
 	}

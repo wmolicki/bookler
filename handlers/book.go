@@ -17,16 +17,18 @@ var validate *validator.Validate
 
 type BookHandler struct {
 	bs *models.BookService
+	as *models.AuthorService
 }
 
 func NewBookHandler(env *config.Env) *BookHandler {
 	bs := models.NewBookService(env)
+	as := models.NewAuthorService(env)
 	bs.DestructiveReset()
-	return &BookHandler{bs}
+	return &BookHandler{bs, as}
 }
 
 func (h *BookHandler) Index(w http.ResponseWriter, r *http.Request) {
-	books, err := h.bs.GetBooks()
+	books, err := h.bs.GetList()
 	if err != nil {
 		internalServerError(w, fmt.Sprintf("could not load books: %v", err))
 		return
@@ -62,23 +64,41 @@ func readRequestData(r *http.Request) (*addBookRequestBody, error) {
 }
 
 func (h *BookHandler) AddBook(w http.ResponseWriter, r *http.Request) {
+	// TODO: transaction ?
 	data, err := readRequestData(r)
 	if err != nil {
 		badRequest(w, fmt.Sprintf("error happened during reading request body: %v", err))
 		return
 	}
 
-	book := models.Book{Name: data.Name, Read: data.Read, Description: data.Description, Edition: data.Edition}
+	b := models.Book{Name: data.Name, Read: data.Read, Description: data.Description, Edition: data.Edition}
+	book, err := h.bs.Create(&b)
 
-	for _, a := range data.Authors {
-		// need to actually select those first
-		book.Authors = append(book.Authors, &models.Author{Name: a})
-	}
-
-	if err = h.bs.Create(&book); err != nil {
+	if err != nil {
 		internalServerError(w, fmt.Sprintf("error happened during creating book: %v", err))
 		return
 	}
+
+	for _, authorName := range data.Authors {
+		author, err := h.as.GetByName(authorName)
+		if err != nil {
+			switch err {
+			case models.ErrorEntityNotFound:
+				a := models.Author{Name: authorName}
+				author, err = h.as.Create(&a)
+			default:
+				internalServerError(w, fmt.Sprintf("error happened during retrieving author: %v", err))
+				return
+			}
+		}
+
+		if err := h.bs.AddAuthor(book, author); err != nil {
+			internalServerError(w, fmt.Sprintf("error happened mapping book to author: %v", err))
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }
 
 type updateBookRequestBody struct {

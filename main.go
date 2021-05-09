@@ -28,6 +28,7 @@ func main() {
 	r.Patch("/books/{bookId:[0-9]+}", b.UpdateBook)
 
 	r.Get("/authors", a.Index)
+	// r.Get("/authors", a.Index)
 
 	err := http.ListenAndServe(":3333", r)
 	if err != nil {
