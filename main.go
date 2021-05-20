@@ -36,7 +36,8 @@ func main() {
 	r.Get("/books", b.List)
 	r.Get("/books/add", b.Add)
 	r.Post("/books/add", b.HandleAdd)
-	r.Get("/books/{bookId:[0-9]+}", b.Details)
+	r.Get("/books/{bookId:[0-9]+}", b.Edit)
+	r.Post("/books/{bookId:[0-9]+}", b.HandleEdit)
 
 	r.Get("/authors", a.Display)
 

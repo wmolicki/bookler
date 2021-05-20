@@ -7,6 +7,11 @@ import (
 	"github.com/wmolicki/bookler/config"
 )
 
+type BookAuthor struct {
+	ID   uint
+	Name string
+}
+
 type Book struct {
 	ID          uint
 	CreatedAt   time.Time `db:"created_at"`
@@ -15,6 +20,7 @@ type Book struct {
 	Read        bool
 	Edition     string
 	Description string
+	Authors     []*BookAuthor
 }
 
 type BookService struct {
@@ -59,6 +65,21 @@ func (bs *BookService) GetBookById(id uint) (*Book, error) {
 	if err := first(&book, row); err != nil {
 		return nil, err
 	}
+
+	var authors []*BookAuthor
+	query = "SELECT id, name FROM authors a JOIN book_author ba ON a.id = ba.author_id WHERE ba.book_id = ?"
+	rows, err := bs.db.Queryx(query, id)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		ba := BookAuthor{}
+		if err := rows.StructScan(&ba); err != nil {
+			return nil, err
+		}
+		authors = append(authors, &ba)
+	}
+	book.Authors = authors
 
 	return &book, nil
 }

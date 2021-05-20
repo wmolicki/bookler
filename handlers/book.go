@@ -56,7 +56,7 @@ func (h *BookHandler) List(w http.ResponseWriter, r *http.Request) {
 	h.listView.Render(w, r, BooksViewModel{Books: books})
 }
 
-func (h *BookHandler) Details(w http.ResponseWriter, r *http.Request) {
+func (h *BookHandler) Edit(w http.ResponseWriter, r *http.Request) {
 	bookId, err := parseIdParam("bookId", r)
 	if err != nil {
 		badRequest(w, fmt.Sprintf("could not convert param: %v", err))
@@ -71,7 +71,7 @@ func (h *BookHandler) Details(w http.ResponseWriter, r *http.Request) {
 	}
 	viewModel := EditBookFormData{
 		Name:        book.Name,
-		Author:      "for now not known",
+		Authors:     book.Authors,
 		Description: book.Description,
 		Read:        book.Read,
 		ID:          book.ID,
@@ -79,6 +79,10 @@ func (h *BookHandler) Details(w http.ResponseWriter, r *http.Request) {
 
 	h.editView.Render(w, r, &viewModel)
 	return
+}
+
+func (h *BookHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
+	panic("not implemented")
 }
 
 func (h *BookHandler) Add(w http.ResponseWriter, r *http.Request) {
@@ -92,11 +96,11 @@ type AddBookFormData struct {
 }
 
 type EditBookFormData struct {
-	ID          uint   `schema:"id,required"`
-	Name        string `schema:"name,required"`
-	Author      string `schema:"author,required"`
-	Description string `schema:"description,required"`
-	Read        bool   `schema:"read,required"`
+	ID          uint                 `schema:"id,required"`
+	Name        string               `schema:"name,required"`
+	Authors     []*models.BookAuthor `schema:"author,required"`
+	Description string               `schema:"description,required"`
+	Read        bool                 `schema:"read,required"`
 }
 
 func (h *BookHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {

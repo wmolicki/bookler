@@ -19,13 +19,14 @@
           <input name="description" class="input" type="text" value="{{.Description}}">
         </div>
       </div>
-
+      {{ range .Authors}}
       <div class="field">
         <label class="label">Author</label>
         <div class="control">
-          <input name="author" class="input" type="text" value="{{.Author}}">
+          <input name="author-{{.ID}}" class="input" type="text" value="{{.Name}}">
         </div>
       </div>
+      {{end}}
 
       <div class="field">
         <div class="control">
