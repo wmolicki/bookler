@@ -30,17 +30,17 @@ func NewAuthorService(env *config.Env) *AuthorService {
 	return &AuthorService{db: env.DB}
 }
 
-func (as *AuthorService) GetList() (*[]Author, error) {
-	var authors []Author
+func (as *AuthorService) GetList() ([]*Author, error) {
+	var authors []*Author
 
-	query := "SELECT id, created_at, updated_at, name FROM authors;"
+	query := "SELECT id, created_at, updated_at, name, COUNT(1) as book_count FROM authors JOIN book_author ba on authors.id = ba.author_id GROUP BY author_id;"
 
 	err := as.db.Select(&authors, query)
 
 	if err != nil {
 		return nil, err
 	}
-	return &authors, nil
+	return authors, nil
 }
 
 func (as *AuthorService) GetByID(id uint) (*Author, error) {

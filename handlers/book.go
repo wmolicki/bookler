@@ -6,25 +6,118 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/wmolicki/bookler/config"
+	"github.com/gorilla/schema"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator"
+	"github.com/wmolicki/bookler/config"
 	"github.com/wmolicki/bookler/models"
+	"github.com/wmolicki/bookler/views"
 )
 
 var validate *validator.Validate
+var decoder = schema.NewDecoder()
 
 type BookHandler struct {
-	bs *models.BookService
-	as *models.AuthorService
+	bs       *models.BookService
+	as       *models.AuthorService
+	listView *views.View
+	addView  *views.View
+	editView *views.View
 }
 
 func NewBookHandler(env *config.Env) *BookHandler {
 	bs := models.NewBookService(env)
 	as := models.NewAuthorService(env)
+	listView := views.NewView("bulma", "templates/books.gohtml")
+	addView := views.NewView("bulma", "templates/book_add.gohtml")
+	editView := views.NewView("bulma", "templates/book_edit.gohtml")
+
+	decoder.IgnoreUnknownKeys(true)
+
 	bs.DestructiveReset()
-	return &BookHandler{bs, as}
+	return &BookHandler{bs, as, listView, addView, editView}
+}
+
+type BooksViewModel struct {
+	Books []*models.Book
+}
+
+type BookViewModel struct {
+	models.Book
+}
+
+func (h *BookHandler) List(w http.ResponseWriter, r *http.Request) {
+	books, err := h.bs.GetList()
+	if err != nil {
+		internalServerError(w, fmt.Sprintf("could not load books: %v", err))
+		return
+	}
+	h.listView.Render(w, r, BooksViewModel{Books: books})
+}
+
+func (h *BookHandler) Details(w http.ResponseWriter, r *http.Request) {
+	bookId, err := parseIdParam("bookId", r)
+	if err != nil {
+		badRequest(w, fmt.Sprintf("could not convert param: %v", err))
+		return
+	}
+
+	book, err := h.bs.GetBookById(bookId)
+	if err != nil {
+		// TODO: switch on error type
+		http.Error(w, "could not get book", http.StatusInternalServerError)
+		return
+	}
+	viewModel := EditBookFormData{
+		Name:        book.Name,
+		Author:      "for now not known",
+		Description: book.Description,
+		Read:        book.Read,
+		ID:          book.ID,
+	}
+
+	h.editView.Render(w, r, &viewModel)
+	return
+}
+
+func (h *BookHandler) Add(w http.ResponseWriter, r *http.Request) {
+	h.addView.Render(w, r, nil)
+}
+
+type AddBookFormData struct {
+	Name        string `schema:"name,required"`
+	Author      string `schema:"author,required"`
+	Description string `schema:"description,required"`
+}
+
+type EditBookFormData struct {
+	ID          uint   `schema:"id,required"`
+	Name        string `schema:"name,required"`
+	Author      string `schema:"author,required"`
+	Description string `schema:"description,required"`
+	Read        bool   `schema:"read,required"`
+}
+
+func (h *BookHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		badRequest(w, err.Error())
+	}
+	var data AddBookFormData
+	err = decoder.Decode(&data, r.PostForm)
+	if err != nil {
+		panic(err)
+	}
+
+	book, err := h.addBook(data)
+	if err != nil {
+		http.Error(w, "error creating book", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/books/%d", book.ID), http.StatusFound)
+
 }
 
 func (h *BookHandler) Index(w http.ResponseWriter, r *http.Request) {
@@ -33,6 +126,7 @@ func (h *BookHandler) Index(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w, fmt.Sprintf("could not load books: %v", err))
 		return
 	}
+	//_ := template.New("templates/books.gohtml")
 
 	b, _ := json.Marshal(books)
 
@@ -61,6 +155,37 @@ func readRequestData(r *http.Request) (*addBookRequestBody, error) {
 	}
 
 	return &data, nil
+}
+
+func (h *BookHandler) addBook(data AddBookFormData) (*models.Book, error) {
+	b := models.Book{Name: data.Name, Read: false, Description: data.Description, Edition: ""}
+	book, err := h.bs.Create(&b)
+
+	if err != nil {
+		return nil, fmt.Errorf("error happened during creating book: %v", err)
+	}
+
+	// TODO: multiform
+	authors := []string{data.Author}
+
+	for _, authorName := range authors {
+		author, err := h.as.GetByName(authorName)
+		if err != nil {
+			switch err {
+			case models.ErrorEntityNotFound:
+				a := models.Author{Name: authorName}
+				author, err = h.as.Create(&a)
+			default:
+				return nil, fmt.Errorf("error happened during retrieving author: %v", err)
+			}
+		}
+
+		if err := h.bs.AddAuthor(book, author); err != nil {
+			return nil, fmt.Errorf("error happened mapping book to author: %v", err)
+		}
+	}
+
+	return book, nil
 }
 
 func (h *BookHandler) AddBook(w http.ResponseWriter, r *http.Request) {
@@ -125,14 +250,21 @@ func readUpdateRequestData(r *http.Request) (*updateBookRequestBody, error) {
 	return &data, nil
 }
 
+func parseIdParam(param string, r *http.Request) (uint, error) {
+	idParam := chi.URLParam(r, "bookId")
+	parsedBookId, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return uint(parsedBookId), nil
+}
+
 func (h *BookHandler) UpdateBook(w http.ResponseWriter, r *http.Request) {
-	bookIdParam := chi.URLParam(r, "bookId")
-	parsedBookId, err := strconv.ParseUint(bookIdParam, 10, 64)
+	bookId, err := parseIdParam("bookId", r)
 	if err != nil {
 		badRequest(w, fmt.Sprintf("could not convert param: %v", err))
 		return
 	}
-	bookId := uint(parsedBookId)
 
 	book, err := h.bs.GetBookById(bookId)
 	if err != nil {

@@ -1,0 +1,47 @@
+{{- /*gotype: github.com/wmolicki/bookler/handlers.EditBookFormData*/ -}}
+{{ define "yield"}}
+  <h1 class="title">Book "{{ .Name }}"</h1>
+    <form method="post">
+      {{ csrfField }}
+
+      <input name="id" class="hidden" hidden type="text" value="{{.ID}}">
+
+      <div class="field">
+        <label class="label">Name</label>
+        <div class="control">
+          <input name="name" class="input" type="text" value="{{ .Name}}">
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label">Description</label>
+        <div class="control">
+          <input name="description" class="input" type="text" value="{{.Description}}">
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label">Author</label>
+        <div class="control">
+          <input name="author" class="input" type="text" value="{{.Author}}">
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="control">
+          <label class="checkbox">
+            <input name="read" type="checkbox" {{if .Read}}checked{{end}}>
+            Read
+          </label>
+        </div>
+      </div>
+
+      <div class="field is-grouped">
+        <div class="control">
+          <button class="button is-link">Edit</button>
+        </div>
+      </div>
+
+    </form>
+{{end}}
+

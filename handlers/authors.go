@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/wmolicki/bookler/views"
+
 	"github.com/wmolicki/bookler/config"
 
 	"github.com/wmolicki/bookler/models"
@@ -12,12 +14,28 @@ import (
 
 type AuthorsHandler struct {
 	as *models.AuthorService
+	v  *views.View
 }
 
 func NewAuthorsHandler(env *config.Env) *AuthorsHandler {
 	as := models.NewAuthorService(env)
+	view := views.NewView("bulma", "templates/authors.gohtml")
+
 	as.DestructiveReset()
-	return &AuthorsHandler{as}
+	return &AuthorsHandler{as, view}
+}
+
+type AuthorsViewModel struct {
+	Authors []*models.Author
+}
+
+func (a *AuthorsHandler) Display(w http.ResponseWriter, r *http.Request) {
+	authors, err := a.as.GetList()
+	if err != nil {
+		internalServerError(w, fmt.Sprintf("could not load Authors: %v", err))
+		return
+	}
+	a.v.Render(w, r, AuthorsViewModel{Authors: authors})
 }
 
 func (a *AuthorsHandler) Index(w http.ResponseWriter, r *http.Request) {

@@ -15,7 +15,6 @@ type Book struct {
 	Read        bool
 	Edition     string
 	Description string
-	// Authors     []*Author `gorm:"many2many:book_author"`
 }
 
 type BookService struct {
@@ -64,8 +63,8 @@ func (bs *BookService) GetBookById(id uint) (*Book, error) {
 	return &book, nil
 }
 
-func (bs *BookService) GetList() (*[]Book, error) {
-	var books []Book
+func (bs *BookService) GetList() ([]*Book, error) {
+	var books []*Book
 
 	query := "SELECT id, created_at, updated_at, name, read, edition, description FROM books;"
 
@@ -74,7 +73,7 @@ func (bs *BookService) GetList() (*[]Book, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &books, nil
+	return books, nil
 }
 
 func (bs *BookService) DestructiveReset() {
