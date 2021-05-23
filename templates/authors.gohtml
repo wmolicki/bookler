@@ -5,14 +5,14 @@
     <thead>
     <tr>
       <th>ID</th>
-      <th>Name</th>
+      <th>Name </th>
       <th>Books</th>
     </tr>
     </thead>
     <tbody>
     {{ range .Authors}}
       <tr>
-        <td>{{.ID}}</td>
+        <td><a href="/authors/{{.ID}}">{{.ID}}</a></td>
         <td>{{.Name}}</td>
         <td>{{.BookCount}}</td>
       </tr>

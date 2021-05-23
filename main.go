@@ -6,32 +6,35 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/wmolicki/bookler/views"
-
 	"github.com/gorilla/csrf"
 
-	"github.com/wmolicki/bookler/handlers"
 	"golang.org/x/oauth2"
 
-	"github.com/wmolicki/bookler/config"
+	"github.com/wmolicki/bookler/handlers"
+	"github.com/wmolicki/bookler/models"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
-	e := config.NewEnv()
 	r := getRouter()
 
-	b := handlers.NewBookHandler(e)
-	a := handlers.NewAuthorsHandler(e)
+	services, err := models.NewServices(
+		models.WithDB("sqlite3", "./books_v2.db"),
+		models.WithAuthorService(),
+		models.WithBookService(),
+	)
+	must(err)
+	defer services.Close()
 
-	indexView := views.NewView("bulma", "templates/index.gohtml")
+	// static views
+	static := handlers.NewStatic()
+	r.Method(http.MethodGet, "/", static.Index)
+	r.Method(http.MethodGet, "/about", static.About)
 
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		indexView.Render(w, r, nil)
-	})
+	b := handlers.NewBookHandler(services.Author, services.Book)
+	a := handlers.NewAuthorsHandler(services.Author)
 
 	r.Get("/books", b.List)
 	r.Get("/books/add", b.Add)
@@ -101,7 +104,7 @@ func main() {
 	r.Get("/api/v1/authors", a.Index)
 	// r.Get("/authors", a.Index)
 
-	err := http.ListenAndServe(":3333", r)
+	err = http.ListenAndServe(":3333", r)
 	if err != nil {
 		log.Fatalf("cannot serve: %v", err)
 	}

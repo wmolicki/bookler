@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/wmolicki/bookler/config"
-
 	_ "github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -26,8 +24,8 @@ type AuthorService struct {
 	db *sqlx.DB
 }
 
-func NewAuthorService(env *config.Env) *AuthorService {
-	return &AuthorService{db: env.DB}
+func NewAuthorService(db *sqlx.DB) *AuthorService {
+	return &AuthorService{db: db}
 }
 
 func (as *AuthorService) GetList() ([]*Author, error) {

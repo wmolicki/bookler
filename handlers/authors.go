@@ -5,11 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/wmolicki/bookler/views"
-
-	"github.com/wmolicki/bookler/config"
-
 	"github.com/wmolicki/bookler/models"
+	"github.com/wmolicki/bookler/views"
 )
 
 type AuthorsHandler struct {
@@ -17,8 +14,7 @@ type AuthorsHandler struct {
 	v  *views.View
 }
 
-func NewAuthorsHandler(env *config.Env) *AuthorsHandler {
-	as := models.NewAuthorService(env)
+func NewAuthorsHandler(as *models.AuthorService) *AuthorsHandler {
 	view := views.NewView("bulma", "templates/authors.gohtml")
 
 	as.DestructiveReset()

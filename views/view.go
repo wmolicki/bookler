@@ -35,6 +35,10 @@ type View struct {
 	Layout   string
 }
 
+func (v *View) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	v.Render(w, r, nil)
+}
+
 func (v *View) Render(w http.ResponseWriter, r *http.Request, data interface{}) {
 	w.Header().Set("Content-Type", "text/html")
 	var buf bytes.Buffer

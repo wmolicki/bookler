@@ -1,10 +1,10 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/wmolicki/bookler/config"
 )
 
 type BookAuthor struct {
@@ -25,13 +25,45 @@ type Book struct {
 
 type BookService struct {
 	db *sqlx.DB
+	as *AuthorService
 }
 
-func NewBookService(env *config.Env) *BookService {
-	return &BookService{db: env.DB}
+func NewBookService(db *sqlx.DB, as *AuthorService) *BookService {
+	return &BookService{db: db, as: as}
 }
 
-func (bs *BookService) Create(book *Book) (*Book, error) {
+func (bs *BookService) New(name, description, edition, author string, read bool) (*Book, error) {
+	b := Book{Name: name, Read: read, Description: description, Edition: edition}
+	book, err := bs.insert(&b)
+
+	if err != nil {
+		return nil, fmt.Errorf("error happened during creating book: %v", err)
+	}
+
+	// TODO: multiform
+	authors := []string{author}
+
+	for _, authorName := range authors {
+		author, err := bs.as.GetByName(authorName)
+		if err != nil {
+			switch err {
+			case ErrorEntityNotFound:
+				a := Author{Name: authorName}
+				author, err = bs.as.Create(&a)
+			default:
+				return nil, fmt.Errorf("error happened during retrieving author: %v", err)
+			}
+		}
+
+		if err := bs.addAuthor(book, author); err != nil {
+			return nil, fmt.Errorf("error happened mapping book to author: %v", err)
+		}
+	}
+
+	return book, nil
+}
+
+func (bs *BookService) insert(book *Book) (*Book, error) {
 	query := "INSERT INTO books (name, read, edition, description) VALUES (?, ?, ?, ?)"
 	result, err := bs.db.Exec(query, book.Name, book.Read, book.Edition, book.Description)
 	if err != nil {
@@ -46,7 +78,7 @@ func (bs *BookService) Create(book *Book) (*Book, error) {
 	return insertedBook, err
 }
 
-func (bs *BookService) AddAuthor(book *Book, author *Author) error {
+func (bs *BookService) addAuthor(book *Book, author *Author) error {
 	query := "INSERT INTO book_author (book_id, author_id) VALUES (?, ?)"
 	_, err := bs.db.Exec(query, book.ID, author.ID)
 	return err

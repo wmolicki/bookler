@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator"
-	"github.com/wmolicki/bookler/config"
+
 	"github.com/wmolicki/bookler/models"
 	"github.com/wmolicki/bookler/views"
 )
@@ -26,9 +26,7 @@ type BookHandler struct {
 	editView *views.View
 }
 
-func NewBookHandler(env *config.Env) *BookHandler {
-	bs := models.NewBookService(env)
-	as := models.NewAuthorService(env)
+func NewBookHandler(as *models.AuthorService, bs *models.BookService) *BookHandler {
 	listView := views.NewView("bulma", "templates/books.gohtml")
 	addView := views.NewView("bulma", "templates/book_add.gohtml")
 	editView := views.NewView("bulma", "templates/book_edit.gohtml")
@@ -114,7 +112,7 @@ func (h *BookHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	book, err := h.addBook(data)
+	book, err := h.bs.New(data.Name, data.Description, "", data.Author, false)
 	if err != nil {
 		http.Error(w, "error creating book", http.StatusInternalServerError)
 		return
@@ -161,37 +159,6 @@ func readRequestData(r *http.Request) (*addBookRequestBody, error) {
 	return &data, nil
 }
 
-func (h *BookHandler) addBook(data AddBookFormData) (*models.Book, error) {
-	b := models.Book{Name: data.Name, Read: false, Description: data.Description, Edition: ""}
-	book, err := h.bs.Create(&b)
-
-	if err != nil {
-		return nil, fmt.Errorf("error happened during creating book: %v", err)
-	}
-
-	// TODO: multiform
-	authors := []string{data.Author}
-
-	for _, authorName := range authors {
-		author, err := h.as.GetByName(authorName)
-		if err != nil {
-			switch err {
-			case models.ErrorEntityNotFound:
-				a := models.Author{Name: authorName}
-				author, err = h.as.Create(&a)
-			default:
-				return nil, fmt.Errorf("error happened during retrieving author: %v", err)
-			}
-		}
-
-		if err := h.bs.AddAuthor(book, author); err != nil {
-			return nil, fmt.Errorf("error happened mapping book to author: %v", err)
-		}
-	}
-
-	return book, nil
-}
-
 func (h *BookHandler) AddBook(w http.ResponseWriter, r *http.Request) {
 	// TODO: transaction ?
 	data, err := readRequestData(r)
@@ -200,31 +167,11 @@ func (h *BookHandler) AddBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b := models.Book{Name: data.Name, Read: data.Read, Description: data.Description, Edition: data.Edition}
-	book, err := h.bs.Create(&b)
+	_, err = h.bs.New(data.Name, data.Description, data.Edition, data.Authors[0], data.Read)
 
 	if err != nil {
-		internalServerError(w, fmt.Sprintf("error happened during creating book: %v", err))
+		internalServerError(w, fmt.Sprintf("error happened mapping book to author: %v", err))
 		return
-	}
-
-	for _, authorName := range data.Authors {
-		author, err := h.as.GetByName(authorName)
-		if err != nil {
-			switch err {
-			case models.ErrorEntityNotFound:
-				a := models.Author{Name: authorName}
-				author, err = h.as.Create(&a)
-			default:
-				internalServerError(w, fmt.Sprintf("error happened during retrieving author: %v", err))
-				return
-			}
-		}
-
-		if err := h.bs.AddAuthor(book, author); err != nil {
-			internalServerError(w, fmt.Sprintf("error happened mapping book to author: %v", err))
-			return
-		}
 	}
 
 	w.WriteHeader(http.StatusCreated)
