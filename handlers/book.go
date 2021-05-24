@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator"
 
+	"github.com/wmolicki/bookler/context"
 	"github.com/wmolicki/bookler/models"
 	"github.com/wmolicki/bookler/views"
 )
@@ -46,6 +47,10 @@ type BookViewModel struct {
 }
 
 func (h *BookHandler) List(w http.ResponseWriter, r *http.Request) {
+	user := context.User(r.Context())
+
+	fmt.Printf("%v", user)
+
 	books, err := h.bs.GetList()
 	if err != nil {
 		internalServerError(w, fmt.Sprintf("could not load books: %v", err))

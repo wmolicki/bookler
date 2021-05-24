@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/jmoiron/sqlx"
+	"golang.org/x/oauth2"
 )
 
 type ServicesConfig func(*Services) error
@@ -17,9 +18,22 @@ func NewServices(configs ...ServicesConfig) (*Services, error) {
 }
 
 type Services struct {
-	Book   *BookService
-	Author *AuthorService
-	db     *sqlx.DB
+	Book        *BookService
+	Author      *AuthorService
+	User        *UserService
+	OauthConfig *oauth2.Config
+	db          *sqlx.DB
+}
+
+func WithDB(driver, dataSourceName string) ServicesConfig {
+	return func(s *Services) error {
+		db, err := sqlx.Open(driver, dataSourceName)
+		if err != nil {
+			return err
+		}
+		s.db = db
+		return nil
+	}
 }
 
 func WithAuthorService() ServicesConfig {
@@ -38,13 +52,17 @@ func WithBookService() ServicesConfig {
 	}
 }
 
-func WithDB(driver, dataSourceName string) ServicesConfig {
+func WithUserService() ServicesConfig {
 	return func(s *Services) error {
-		db, err := sqlx.Open(driver, dataSourceName)
-		if err != nil {
-			return err
-		}
-		s.db = db
+		us := NewUserService(s.db)
+		s.User = us
+		return nil
+	}
+}
+
+func WithOauthConfig(config *oauth2.Config) ServicesConfig {
+	return func(s *Services) error {
+		s.OauthConfig = config
 		return nil
 	}
 }

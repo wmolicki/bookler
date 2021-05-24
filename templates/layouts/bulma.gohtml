@@ -4,17 +4,22 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="google-signin-client_id" content="810036611838-k3ur24fbnamqvlu4stsorm47v2onlv0k.apps.googleusercontent.com">
     <title>Bookler</title>
     <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/bulma@0.9.2/css/bulma.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
   </head>
   <body>
-  {{template "navbar"}}
+  {{template "navbar" .}}
   <section class="section">
     <div class="container">
-        {{ template "yield" .}}
+        {{ template "yield" .Stuff}}
     </div>
       {{ template "footer"}}
   </section>
+  <script src="https://apis.google.com/js/platform.js" async defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" async defer></script>
   </body>
   </html>
 {{ end }}

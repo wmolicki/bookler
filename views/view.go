@@ -10,12 +10,20 @@ import (
 	"path/filepath"
 
 	"github.com/gorilla/csrf"
+
+	"github.com/wmolicki/bookler/context"
+	"github.com/wmolicki/bookler/models"
 )
 
 var (
 	LayoutDir   string = "templates/layouts/"
 	TemplateExt string = ".gohtml"
 )
+
+type Data struct {
+	User  *models.User
+	Stuff interface{}
+}
 
 func NewView(layout string, files ...string) *View {
 	files = append(files, layoutFiles()...)
@@ -48,7 +56,9 @@ func (v *View) Render(w http.ResponseWriter, r *http.Request, data interface{}) 
 			return csrfField
 		},
 	})
-	if err := tpl.ExecuteTemplate(&buf, v.Layout, data); err != nil {
+	user := context.User(r.Context())
+	vd := Data{User: user, Stuff: data}
+	if err := tpl.ExecuteTemplate(&buf, v.Layout, vd); err != nil {
 		log.Println(err)
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return

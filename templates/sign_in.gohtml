@@ -1,0 +1,53 @@
+{{ define "yield"}}
+  <h1 class="title">Sign in</h1>
+  <div class="columns">
+    <div class="column is-one-quarter">
+      <form method="POST" class="box">
+        <div class="field">
+          <p class="control has-icons-left has-icons-right">
+            <input class="input" type="email" placeholder="Email">
+            <span class="icon is-small is-left">
+              <i class="fas fa-envelope"></i>
+            </span>
+          </p>
+        </div>
+        <div class="field">
+          <p class="control has-icons-left">
+            <input class="input" type="password" placeholder="Password">
+            <span class="icon is-small is-left">
+    <i class="fas fa-lock"></i>
+  </span>
+          </p>
+        </div>
+        <div class="field">
+          <p class="control">
+              {{/*            <button class="button is-success">*/}}
+              {{/*              Login*/}}
+              {{/*            </button>*/}}
+          <div class="g-signin2" data-onsuccess="onSignIn"></div>
+
+          </p>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script type="application/javascript">
+      function onSignIn(googleUser) {
+          let id_token = googleUser.getAuthResponse().id_token;
+          let data = {
+              id_token: id_token,
+          };
+          axios.post('/tokensignin', data)
+          .then(function (response) {
+              var auth2 = gapi.auth2.getAuthInstance();
+              auth2.signOut().then(function () {
+                  console.log('User signed out.');
+              });
+              window.location.replace("/");
+          })
+          .catch(function (error) {
+              console.log(error);
+          });
+      }
+  </script>
+{{end}}

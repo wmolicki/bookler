@@ -1,3 +1,4 @@
+{{- /*gotype: github.com/wmolicki/bookler/views.Data*/ -}}
 {{define "navbar"}}
   <nav class="navbar" role="navigation" aria-label="main navigation">
     <div class="navbar-brand">
@@ -22,16 +23,40 @@
 
       <div class="navbar-end">
         <div class="navbar-item">
+          <figure class="image is-24x24">
+            <img class="is-rounded" src="{{if .User }}{{ .User.ProfileImageUrl }}{{end}}">
+          </figure>
+          <div class="block">&nbsp;{{if .User }}{{ .User.Name }}{{end}}</div>
+        </div>
+        <div class="navbar-item">
+
           <div class="buttons">
-            <a class="button is-primary" href="">
-              <strong>Sign up</strong>
-            </a>
-            <a class="button is-light">
+  {{if not .User }}
+            <a class="button is-light" href="/sign_in">
               Log in
             </a>
+              {{ else }}
+            <a class="button is-light" href="#" onclick="signOut();">
+              Sign out
+            </a>
+    {{ end }}
           </div>
         </div>
       </div>
     </div>
+    <script type="application/javascript">
+        function signOut() {
+            axios.post('/sign_out', null)
+                .then(function (response) {
+                    console.log(response.statusCode)
+                    console.log(response.text);
+                    console.log(response);
+                    window.location.replace("/sign_in");
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+        }
+    </script>
   </nav>
 {{end}}
