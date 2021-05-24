@@ -4,8 +4,8 @@ import "github.com/wmolicki/bookler/views"
 
 func NewStatic() *Static {
 	return &Static{
-		Index: views.NewView("bulma", "templates/index.gohtml"),
-		About: views.NewView("bulma", "templates/about.gohtml"),
+		Index: views.NewView("bootstrap", "templates/index.gohtml"),
+		About: views.NewView("bootstrap", "templates/about.gohtml"),
 	}
 }
 

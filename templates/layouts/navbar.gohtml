@@ -1,62 +1,36 @@
 {{- /*gotype: github.com/wmolicki/bookler/views.Data*/ -}}
 {{define "navbar"}}
-  <nav class="navbar" role="navigation" aria-label="main navigation">
-    <div class="navbar-brand">
-      <a class="navbar-item" href="/">
-        Bookler
-      </a>
-
-      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
-        <span aria-hidden="true"></span>
-        <span aria-hidden="true"></span>
-        <span aria-hidden="true"></span>
-      </a>
-    </div>
-
-    <div id="navbarBasicExample" class="navbar-menu">
-      <div class="navbar-start">
-        <a class="navbar-item" href="/">Home</a>
-        <a class="navbar-item" href="/books">Books</a>
-        <a class="navbar-item" href="/authors">Authors</a>
-        <a class="navbar-item" href="/about">About</a>
-      </div>
-
-      <div class="navbar-end">
-        <div class="navbar-item">
-          <figure class="image is-24x24">
-            <img class="is-rounded" src="{{if .User }}{{ .User.ProfileImageUrl }}{{end}}">
-          </figure>
-          <div class="block">&nbsp;{{if .User }}{{ .User.Name }}{{end}}</div>
-        </div>
-        <div class="navbar-item">
-
-          <div class="buttons">
-  {{if not .User }}
-            <a class="button is-light" href="/sign_in">
-              Log in
-            </a>
-              {{ else }}
-            <a class="button is-light" href="#" onclick="signOut();">
-              Sign out
-            </a>
-    {{ end }}
-          </div>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">Bookler</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="/">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/books">Books</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/authors">Authors</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/about">About</a>
+          </li>
+        </ul>
+        <div lang="">
+          {{if .User }}
+            <form method="POST" action="/sign_out">
+              <button class="btn btn-outline-primary" type="submit">Sign Out</button>
+            </form>
+          {{else}}
+            <a href="/sign_in"><button class="btn btn-outline-primary" type="submit">Sign In</button></a>
+          {{end}}
         </div>
       </div>
     </div>
-    <script type="application/javascript">
-        function signOut() {
-            axios.post('/sign_out', null)
-                .then(function (response) {
-                    console.log(response.statusCode)
-                    console.log(response.text);
-                    console.log(response);
-                    window.location.replace("/sign_in");
-                })
-                .catch(function (error) {
-                    console.log(error);
-                });
-        }
-    </script>
   </nav>
 {{end}}

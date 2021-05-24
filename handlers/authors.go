@@ -15,7 +15,7 @@ type AuthorsHandler struct {
 }
 
 func NewAuthorsHandler(as *models.AuthorService) *AuthorsHandler {
-	view := views.NewView("bulma", "templates/authors.gohtml")
+	view := views.NewView("bootstrap", "templates/authors.gohtml")
 
 	as.DestructiveReset()
 	return &AuthorsHandler{as, view}

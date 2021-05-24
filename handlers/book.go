@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator"
 
 	"github.com/wmolicki/bookler/context"
@@ -28,9 +28,9 @@ type BookHandler struct {
 }
 
 func NewBookHandler(as *models.AuthorService, bs *models.BookService) *BookHandler {
-	listView := views.NewView("bulma", "templates/books.gohtml")
-	addView := views.NewView("bulma", "templates/book_add.gohtml")
-	editView := views.NewView("bulma", "templates/book_edit.gohtml")
+	listView := views.NewView("bootstrap", "templates/books.gohtml")
+	addView := views.NewView("bootstrap", "templates/book_add.gohtml")
+	editView := views.NewView("bootstrap", "templates/book_edit.gohtml")
 
 	decoder.IgnoreUnknownKeys(true)
 
@@ -207,7 +207,8 @@ func readUpdateRequestData(r *http.Request) (*updateBookRequestBody, error) {
 }
 
 func parseIdParam(param string, r *http.Request) (uint, error) {
-	idParam := chi.URLParam(r, "bookId")
+	vars := mux.Vars(r)
+	idParam := vars["bookId"]
 	parsedBookId, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		return 0, err

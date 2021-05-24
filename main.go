@@ -4,13 +4,14 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/mux"
+
 	"github.com/wmolicki/bookler/handlers"
 	"github.com/wmolicki/bookler/helpers"
 	"github.com/wmolicki/bookler/middleware"
 	"github.com/wmolicki/bookler/models"
 	"github.com/wmolicki/bookler/oauth"
 
-	"github.com/go-chi/chi/v5"
 	chiMw "github.com/go-chi/chi/v5/middleware"
 )
 
@@ -32,34 +33,38 @@ func main() {
 
 	// static views
 	static := handlers.NewStatic()
-	r.Method(http.MethodGet, "/", static.Index)
-	r.Method(http.MethodGet, "/about", static.About)
+	r.Handle("/", static.Index).Methods(http.MethodGet)
+	r.Handle("/about", static.About).Methods(http.MethodGet)
 
 	b := handlers.NewBookHandler(services.Author, services.Book)
 	a := handlers.NewAuthorsHandler(services.Author)
 	u := handlers.NewUserHandler(services.User)
 
-	r.Get("/books", b.List)
-	r.Get("/books/add", b.Add)
-	r.Post("/books/add", b.HandleAdd)
-	r.Get("/books/{bookId:[0-9]+}", b.Edit)
-	r.Post("/books/{bookId:[0-9]+}", b.HandleEdit)
+	r.HandleFunc("/books", b.List).Methods(http.MethodGet)
+	r.HandleFunc("/books/add", b.Add).Methods(http.MethodGet)
+	r.HandleFunc("/books/add", b.HandleAdd).Methods(http.MethodPost)
+	r.HandleFunc("/books/{bookId:[0-9]+}", b.Edit).Methods(http.MethodGet)
+	r.HandleFunc("/books/{bookId:[0-9]+}", b.HandleEdit).Methods(http.MethodPost)
 
-	r.Get("/authors", a.Display)
+	r.HandleFunc("/authors", a.Display)
 
 	oh := oauth.NewOauthHandler(services.OauthConfig, services.User)
-	r.Get("/oauth/google/connect", oh.SetCookieRedirect)
-	r.Get("/oauth/google/callback", oh.Callback)
-	r.Post("/tokensignin", oh.TokenSignIn)
-	r.Get("/sign_in", u.SignIn)
-	r.Post("/sign_out", oh.SignOut)
+	r.HandleFunc("/oauth/google/connect", oh.SetCookieRedirect).Methods(http.MethodGet)
+	r.HandleFunc("/oauth/google/callback", oh.Callback).Methods(http.MethodGet)
+	r.HandleFunc("/tokensignin", oh.TokenSignIn).Methods(http.MethodPost)
+	r.HandleFunc("/sign_in", u.SignIn).Methods(http.MethodGet)
+	r.HandleFunc("/sign_out", oh.SignOut).Methods(http.MethodPost)
 
-	r.Get("/api/v1/books", b.Index)
-	r.Post("/api/v/books", b.AddBook)
-	r.Patch("/api/v1/books/{bookId:[0-9]+}", b.UpdateBook)
+	r.HandleFunc("/api/v1/books", b.Index).Methods(http.MethodGet)
+	r.HandleFunc("/api/v/books", b.AddBook).Methods(http.MethodPost)
+	r.HandleFunc("/api/v1/books/{bookId:[0-9]+}", b.UpdateBook).Methods(http.MethodPatch)
 
-	r.Get("/api/v1/authors", a.Index)
-	// r.Get("/authors", a.Index)
+	r.HandleFunc("/api/v1/authors", a.Index).Methods(http.MethodGet)
+	// r.HandleFunc("/authors", a.Index)
+
+	staticHandler := http.FileServer(http.Dir("./static"))
+	staticHandler = http.StripPrefix("/static/", staticHandler)
+	r.PathPrefix("/static").Handler(staticHandler)
 
 	err = http.ListenAndServe(":3333", r)
 	if err != nil {
@@ -67,8 +72,8 @@ func main() {
 	}
 }
 
-func getRouter() *chi.Mux {
-	r := chi.NewRouter()
+func getRouter() *mux.Router {
+	r := mux.NewRouter()
 	r.Use(chiMw.Logger)
 	r.Use(chiMw.Recoverer)
 	r.Use(chiMw.NoCache)

@@ -4,31 +4,27 @@
     <form method="post">
       {{ csrfField }}
 
-      <div class="field">
-        <label class="label">Name</label>
+      <div class="mb-3">
+        <label class="form-label">Name</label>
         <div class="control">
-          <input name="name" class="input" type="text">
+          <input name="name" class="form-control" type="text">
         </div>
       </div>
 
-      <div class="field">
-        <label class="label">Description</label>
+      <div class="mb-3">
+        <label class="form-label">Description</label>
         <div class="control">
-          <input name="description" class="input" type="text">
+          <input name="description" class="form-control" type="text">
         </div>
       </div>
 
-      <div class="field">
-        <label class="label">Author</label>
+      <div class="mb-3">
+        <label class="form-label">Author</label>
         <div class="control">
-          <input name="author" class="input" type="text">
+          <input name="author" class="form-control" type="text">
         </div>
       </div>
 
-      <div class="field is-grouped">
-        <div class="control">
-          <button class="button is-link">Submit</button>
-        </div>
-      </div>
+      <button type="submit" class="btn btn-primary">Submit</button>
     </form>
 {{end}}

@@ -6,43 +6,36 @@
 
       <input name="id" class="hidden" hidden type="text" value="{{.ID}}">
 
-      <div class="field">
-        <label class="label">Name</label>
+      <div class="mb-3">
+        <label class="form-label">Name</label>
         <div class="control">
-          <input name="name" class="input" type="text" value="{{ .Name}}">
+          <input name="name" class="form-control" type="text" value="{{ .Name}}">
         </div>
       </div>
 
-      <div class="field">
-        <label class="label">Description</label>
+      <div class="mb-3">
+        <label class="form-label">Description</label>
         <div class="control">
-          <input name="description" class="input" type="text" value="{{.Description}}">
+          <input name="description" class="form-control" type="text" value="{{.Description}}">
         </div>
       </div>
       {{ range .Authors}}
-      <div class="field">
-        <label class="label">Author</label>
+      <div class="mb-3">
+        <label class="form-label">Author</label>
         <div class="control">
-          <input name="author-{{.ID}}" class="input" type="text" value="{{.Name}}">
+          <input name="author-{{.ID}}" class="form-control" type="text" value="{{.Name}}">
         </div>
       </div>
       {{end}}
 
-      <div class="field">
-        <div class="control">
-          <label class="checkbox">
-            <input name="read" type="checkbox" {{if .Read}}checked{{end}}>
-            Read
-          </label>
-        </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" value="" id="formReadChecked" {{if .Read}}checked{{end}}>
+        <label class="form-check-label" for="formReadChecked">
+          Read
+        </label>
       </div>
 
-      <div class="field is-grouped">
-        <div class="control">
-          <button class="button is-link">Edit</button>
-        </div>
-      </div>
-
+      <button type="submit" class="btn btn-primary">Edit</button>
     </form>
 {{end}}
 

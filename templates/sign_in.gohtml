@@ -1,33 +1,21 @@
 {{ define "yield"}}
   <h1 class="title">Sign in</h1>
   <div class="columns">
-    <div class="column is-one-quarter">
-      <form method="POST" class="box">
-        <div class="field">
-          <p class="control has-icons-left has-icons-right">
-            <input class="input" type="email" placeholder="Email">
-            <span class="icon is-small is-left">
-              <i class="fas fa-envelope"></i>
-            </span>
-          </p>
+    <div>
+      <form method="POST">
+        <div class="mb-3">
+          <label for="exampleInputEmail1" class="form-label">Email address</label>
+          <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+          <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
         </div>
-        <div class="field">
-          <p class="control has-icons-left">
-            <input class="input" type="password" placeholder="Password">
-            <span class="icon is-small is-left">
-    <i class="fas fa-lock"></i>
-  </span>
-          </p>
+        <div class="mb-3">
+          <label for="exampleInputPassword1" class="form-label">Password</label>
+          <input type="password" class="form-control" id="exampleInputPassword1">
         </div>
-        <div class="field">
-          <p class="control">
-              {{/*            <button class="button is-success">*/}}
-              {{/*              Login*/}}
-              {{/*            </button>*/}}
+        <div class="mb-3">
           <div class="g-signin2" data-onsuccess="onSignIn"></div>
-
-          </p>
         </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
       </form>
     </div>
   </div>
