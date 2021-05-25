@@ -31,7 +31,11 @@ func NewView(layout string, files ...string) *View {
 	t, err := template.New("").Funcs(template.FuncMap{
 		"csrfField": func() (template.HTML, error) {
 			return "", errors.New("csrfField is not implemented")
-		}}).ParseFiles(files...)
+		},
+		"signedIn": func() bool {
+			return false
+		},
+	}).ParseFiles(files...)
 	if err != nil {
 		panic(err)
 	}
@@ -51,12 +55,16 @@ func (v *View) Render(w http.ResponseWriter, r *http.Request, data interface{}) 
 	w.Header().Set("Content-Type", "text/html")
 	var buf bytes.Buffer
 	csrfField := csrf.TemplateField(r)
+	user := context.User(r.Context())
 	tpl := v.Template.Funcs(template.FuncMap{
 		"csrfField": func() template.HTML {
 			return csrfField
 		},
+		"signedIn": func() bool {
+			return user != nil
+		},
 	})
-	user := context.User(r.Context())
+
 	vd := Data{User: user, Stuff: data}
 	if err := tpl.ExecuteTemplate(&buf, v.Layout, vd); err != nil {
 		log.Println(err)

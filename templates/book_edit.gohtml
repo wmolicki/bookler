@@ -1,41 +1,34 @@
 {{- /*gotype: github.com/wmolicki/bookler/handlers.EditBookFormData*/ -}}
 {{ define "yield"}}
-  <h1 class="title">Book "{{ .Name }}"</h1>
-    <form method="post">
+  <h1>Book "{{ .Name }}</h1>
+  <form method="post">
       {{ csrfField }}
 
-      <input name="id" class="hidden" hidden type="text" value="{{.ID}}">
+    <input name="id" class="hidden" hidden type="text" value="{{.ID}}">
 
-      <div class="mb-3">
-        <label class="form-label">Name</label>
-        <div class="control">
-          <input name="name" class="form-control" type="text" value="{{ .Name}}">
-        </div>
+    <div class="mb-3">
+      <label class="form-label">Name</label>
+      <div class="control">
+        <input name="name" class="form-control" type="text" value="{{ .Name}}">
       </div>
+    </div>
 
-      <div class="mb-3">
-        <label class="form-label">Description</label>
-        <div class="control">
-          <input name="description" class="form-control" type="text" value="{{.Description}}">
-        </div>
+    <div class="mb-3">
+      <label class="form-label">Description</label>
+      <div class="control">
+        <input name="description" class="form-control" type="text" value="{{.Description}}">
       </div>
+    </div>
       {{ range .Authors}}
-      <div class="mb-3">
-        <label class="form-label">Author</label>
-        <div class="control">
-          <input name="author-{{.ID}}" class="form-control" type="text" value="{{.Name}}">
+        <div class="mb-3">
+          <label class="form-label">Author</label>
+          <div class="control">
+            <input name="author-{{.ID}}" class="form-control" type="text" value="{{.Name}}">
+          </div>
         </div>
-      </div>
       {{end}}
 
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" value="" id="formReadChecked" {{if .Read}}checked{{end}}>
-        <label class="form-check-label" for="formReadChecked">
-          Read
-        </label>
-      </div>
-
-      <button type="submit" class="btn btn-primary">Edit</button>
-    </form>
+    <button type="submit" class="btn btn-primary">Edit</button>
+  </form>
 {{end}}
 

@@ -1,9 +1,10 @@
 {{- /*gotype: github.com/wmolicki/bookler/views.Data*/ -}}
 {{define "navbar"}}
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <div class="container-fluid">
+  <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
+    <div class="container">
       <a class="navbar-brand" href="/">Bookler</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+              aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -22,15 +23,36 @@
           </li>
         </ul>
         <div lang="">
-          {{if .User }}
-            <form method="POST" action="/sign_out">
-              <button class="btn btn-outline-primary" type="submit">Sign Out</button>
-            </form>
-          {{else}}
-            <a href="/sign_in"><button class="btn btn-outline-primary" type="submit">Sign In</button></a>
-          {{end}}
+            {{if signedIn }}
+              <form method="POST" action="/sign_out" id="signOutForm">
+                <input class="btn btn-outline-primary" type="submit" hidden/>
+              </form>
+              <div class="dropdown text-end">
+                <a href="#" class="d-block link-dark text-decoration-none dropdown-toggle" id="dropdownUser1"
+                   data-bs-toggle="dropdown" aria-expanded="false">
+                  <img src="{{.User.ProfileImageUrl}}" alt="{{.User.Name}}" width="32" height="32" class="rounded-circle">
+                </a>
+                <ul class="dropdown-menu text-small dropdown-menu-lg-end" aria-labelledby="dropdownUser1" style="">
+                  <li><a class="dropdown-item" href="#">{{.User.Name}}</a></li>
+                  <li>
+                    <hr class="dropdown-divider">
+                  </li>
+                  <li><a class="dropdown-item" href="#" onclick="submit()">Sign out</a></li>
+                </ul>
+              </div>
+            {{else}}
+              <a href="/sign_in">
+                <button class="btn btn-outline-primary" type="submit">Sign In</button>
+              </a>
+            {{end}}
         </div>
+
       </div>
     </div>
+    <script type="application/javascript">
+        function submit() {
+            document.getElementById("signOutForm").submit();
+        }
+    </script>
   </nav>
 {{end}}

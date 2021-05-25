@@ -1,6 +1,6 @@
 {{- /*gotype: github.com/wmolicki/bookler/handlers.BooksViewModel*/ -}}
 {{ define "yield"}}
-  <h1 class="title">books</h1>
+  <h1 class="title">Books</h1>
     <a href="/books/add"><button class="btn btn-outline-primary">Add</button></a>
   <table class="table">
     <thead>
@@ -10,7 +10,6 @@
       <th>Description</th>
       <th>Edition</th>
       <th>Added to Library</th>
-      <th>Read</th>
     </tr>
     </thead>
     <tbody>
@@ -21,7 +20,6 @@
         <td>{{.Description}}</td>
         <td>{{.Edition}}</td>
         <td>{{.CreatedAt}}</td>
-        <td>{{.Read}}</td>
       </tr>
     {{end}}
     </tbody>

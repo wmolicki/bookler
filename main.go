@@ -46,7 +46,8 @@ func main() {
 	r.HandleFunc("/books/{bookId:[0-9]+}", b.Edit).Methods(http.MethodGet)
 	r.HandleFunc("/books/{bookId:[0-9]+}", b.HandleEdit).Methods(http.MethodPost)
 
-	r.HandleFunc("/authors", a.Display)
+	r.HandleFunc("/authors", a.List)
+	r.HandleFunc("/authors/{authorId:[0-9]+}", a.Details).Methods(http.MethodGet)
 
 	oh := oauth.NewOauthHandler(services.OauthConfig, services.User)
 	r.HandleFunc("/oauth/google/connect", oh.SetCookieRedirect).Methods(http.MethodGet)

@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
-	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 
 	"github.com/go-playground/validator"
 
 	"github.com/wmolicki/bookler/context"
+	"github.com/wmolicki/bookler/helpers"
 	"github.com/wmolicki/bookler/models"
 	"github.com/wmolicki/bookler/views"
 )
@@ -60,7 +59,7 @@ func (h *BookHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *BookHandler) Edit(w http.ResponseWriter, r *http.Request) {
-	bookId, err := parseIdParam("bookId", r)
+	bookId, err := helpers.ParseUintParam(r, "bookId")
 	if err != nil {
 		badRequest(w, fmt.Sprintf("could not convert param: %v", err))
 		return
@@ -76,7 +75,6 @@ func (h *BookHandler) Edit(w http.ResponseWriter, r *http.Request) {
 		Name:        book.Name,
 		Authors:     book.Authors,
 		Description: book.Description,
-		Read:        book.Read,
 		ID:          book.ID,
 	}
 
@@ -103,7 +101,6 @@ type EditBookFormData struct {
 	Name        string               `schema:"name,required"`
 	Authors     []*models.BookAuthor `schema:"author,required"`
 	Description string               `schema:"description,required"`
-	Read        bool                 `schema:"read,required"`
 }
 
 func (h *BookHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
@@ -117,7 +114,7 @@ func (h *BookHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	book, err := h.bs.New(data.Name, data.Description, "", data.Author, false)
+	book, err := h.bs.New(data.Name, data.Description, "", data.Author)
 	if err != nil {
 		http.Error(w, "error creating book", http.StatusInternalServerError)
 		return
@@ -143,7 +140,6 @@ func (h *BookHandler) Index(w http.ResponseWriter, r *http.Request) {
 type addBookRequestBody struct {
 	Name        string   `validate:"required"`
 	Authors     []string `json:"authors" validate:"required"`
-	Read        bool     `validate:"required"`
 	Edition     string   `validate:"required"`
 	Description string   `validate:"required"`
 }
@@ -172,7 +168,7 @@ func (h *BookHandler) AddBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.bs.New(data.Name, data.Description, data.Edition, data.Authors[0], data.Read)
+	_, err = h.bs.New(data.Name, data.Description, data.Edition, data.Authors[0])
 
 	if err != nil {
 		internalServerError(w, fmt.Sprintf("error happened mapping book to author: %v", err))
@@ -185,7 +181,6 @@ func (h *BookHandler) AddBook(w http.ResponseWriter, r *http.Request) {
 type updateBookRequestBody struct {
 	Name        string   `json:"name"`
 	Authors     []string `json:"authors"`
-	Read        bool     `json:"read"`
 	Edition     string   `json:"edition"`
 	Description string   `json:"description"`
 }
@@ -206,18 +201,8 @@ func readUpdateRequestData(r *http.Request) (*updateBookRequestBody, error) {
 	return &data, nil
 }
 
-func parseIdParam(param string, r *http.Request) (uint, error) {
-	vars := mux.Vars(r)
-	idParam := vars["bookId"]
-	parsedBookId, err := strconv.ParseUint(idParam, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	return uint(parsedBookId), nil
-}
-
 func (h *BookHandler) UpdateBook(w http.ResponseWriter, r *http.Request) {
-	bookId, err := parseIdParam("bookId", r)
+	bookId, err := helpers.ParseUintParam(r, "bookId")
 	if err != nil {
 		badRequest(w, fmt.Sprintf("could not convert param: %v", err))
 		return
@@ -236,7 +221,6 @@ func (h *BookHandler) UpdateBook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	book.Name = data.Name
-	book.Read = data.Read
 	book.Edition = data.Edition
 	book.Description = data.Description
 

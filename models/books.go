@@ -17,7 +17,6 @@ type Book struct {
 	CreatedAt   time.Time `db:"created_at"`
 	UpdatedAt   time.Time `db:"updated_at"`
 	Name        string
-	Read        bool
 	Edition     string
 	Description string
 	Authors     []*BookAuthor
@@ -32,8 +31,8 @@ func NewBookService(db *sqlx.DB, as *AuthorService) *BookService {
 	return &BookService{db: db, as: as}
 }
 
-func (bs *BookService) New(name, description, edition, author string, read bool) (*Book, error) {
-	b := Book{Name: name, Read: read, Description: description, Edition: edition}
+func (bs *BookService) New(name, description, edition, author string) (*Book, error) {
+	b := Book{Name: name, Description: description, Edition: edition}
 	book, err := bs.insert(&b)
 
 	if err != nil {
@@ -64,8 +63,8 @@ func (bs *BookService) New(name, description, edition, author string, read bool)
 }
 
 func (bs *BookService) insert(book *Book) (*Book, error) {
-	query := "INSERT INTO books (name, read, edition, description) VALUES (?, ?, ?, ?)"
-	result, err := bs.db.Exec(query, book.Name, book.Read, book.Edition, book.Description)
+	query := "INSERT INTO books (name, edition, description) VALUES (?, ?, ?)"
+	result, err := bs.db.Exec(query, book.Name, book.Edition, book.Description)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +90,7 @@ func (bs *BookService) Update(book *Book) error {
 
 func (bs *BookService) GetBookById(id uint) (*Book, error) {
 	var book Book
-	query := "SELECT id, created_at, updated_at, name, read, edition, description FROM books WHERE id = ?;"
+	query := "SELECT id, created_at, updated_at, name, edition, description FROM books WHERE id = ?;"
 	row := bs.db.QueryRowx(query, id)
 
 	if err := first(&book, row); err != nil {
@@ -119,7 +118,7 @@ func (bs *BookService) GetBookById(id uint) (*Book, error) {
 func (bs *BookService) GetList() ([]*Book, error) {
 	var books []*Book
 
-	query := "SELECT id, created_at, updated_at, name, read, edition, description FROM books;"
+	query := "SELECT id, created_at, updated_at, name, edition, description FROM books;"
 
 	err := bs.db.Select(&books, query)
 
