@@ -51,7 +51,8 @@ func (cs *CollectionsService) List(user *User) ([]*Collection, error) {
 		SELECT b.id, b.name, b.edition, b.description, b.created_at, b.updated_at, bc.collection_id
 		FROM book_collection bc
 		JOIN books b on bc.book_id = b.id
-		WHERE bc.collection_id = ?;
+		JOIN collection c on bc.collection_id = c.id
+		WHERE c.user_id = ?;
 	`
 
 	books := make([]*book, 0)
