@@ -24,6 +24,7 @@ func main() {
 		models.WithBookService(),
 		models.WithUserService(),
 		models.WithOauthConfig(oauth.NewConfig()),
+		models.WithCollectionsService(),
 	)
 	helpers.Must(err)
 	defer services.Close()
@@ -39,6 +40,9 @@ func main() {
 	b := handlers.NewBookHandler(services.Author, services.Book)
 	a := handlers.NewAuthorsHandler(services.Author)
 	u := handlers.NewUserHandler(services.User)
+	c := handlers.NewCollectionsHandler(services.User, services.Book, services.Collections)
+
+	r.HandleFunc("/collections", c.List).Methods(http.MethodGet)
 
 	r.HandleFunc("/books", b.List).Methods(http.MethodGet)
 	r.HandleFunc("/books/add", b.Add).Methods(http.MethodGet)

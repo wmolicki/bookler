@@ -18,6 +18,11 @@
           <li class="nav-item">
             <a class="nav-link" href="/authors">Authors</a>
           </li>
+          {{ if signedIn }}
+            <li class="nav-item">
+              <a class="nav-link" href="/collections">Collections</a>
+            </li>
+          {{end}}
           <li class="nav-item">
             <a class="nav-link" href="/about">About</a>
           </li>

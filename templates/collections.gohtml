@@ -1,0 +1,36 @@
+{{- /*gotype: github.com/wmolicki/bookler/handlers.CollectionsListViewModel*/ -}}
+{{define "yield"}}
+  <h1>Collections</h1>
+  <div class="container">
+    <div>
+      {{ range .Collections }}
+        <div class="container">
+          <p>{{.Name}}</p>
+          <table class="table">
+            <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Description</th>
+              <th>Edition</th>
+              <th>Added to Library</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{range .Books}}
+              <tr>
+                <td><a class="is-link" href="/books/{{.ID}}">{{.ID}}</a></td>
+                <td>{{.Name}}</td>
+                <td>{{.Description}}</td>
+                <td>{{.Edition}}</td>
+                <td>{{.CreatedAt}}</td>
+              </tr>
+            {{end}}
+            </tbody>
+          </table>
+        </div>
+      {{end}}
+    </div>
+
+  </div>
+{{end}}

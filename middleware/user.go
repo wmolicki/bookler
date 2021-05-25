@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/wmolicki/bookler/context"
 	"github.com/wmolicki/bookler/models"
@@ -17,6 +18,13 @@ type UserMiddleware struct {
 
 func (um *UserMiddleware) AddUser(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		// we do not load user for static assets
+		if strings.HasPrefix(path, "/static/") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		cookie, err := r.Cookie(models.AuthCookieName)
 		if err != nil {
 			next.ServeHTTP(w, r)

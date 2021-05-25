@@ -22,6 +22,7 @@ type Services struct {
 	Author      *AuthorService
 	User        *UserService
 	OauthConfig *oauth2.Config
+	Collections *CollectionsService
 	db          *sqlx.DB
 }
 
@@ -63,6 +64,14 @@ func WithUserService() ServicesConfig {
 func WithOauthConfig(config *oauth2.Config) ServicesConfig {
 	return func(s *Services) error {
 		s.OauthConfig = config
+		return nil
+	}
+}
+
+func WithCollectionsService() ServicesConfig {
+	return func(s *Services) error {
+		cs := NewCollectionsService(s.db)
+		s.Collections = cs
 		return nil
 	}
 }
