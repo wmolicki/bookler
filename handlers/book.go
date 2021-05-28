@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/schema"
 
@@ -70,9 +71,15 @@ func (h *BookHandler) Edit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	authorsSl := make([]string, 0, len(book.Authors))
+	for _, a := range book.Authors {
+		authorsSl = append(authorsSl, a.Name)
+	}
+	authors := strings.Join(authorsSl, ", ")
+
 	viewModel := EditBookFormData{
 		Name:        book.Name,
-		Authors:     book.Authors,
+		Authors:     authors,
 		Description: book.Description,
 		ID:          book.ID,
 	}
@@ -144,17 +151,17 @@ func (h *BookHandler) Add(w http.ResponseWriter, r *http.Request) {
 
 type AddBookFormData struct {
 	Name        string `schema:"name,required"`
-	Author      string `schema:"author,required"`
-	Description string `schema:"description,required"`
+	Authors     string `schema:"authors,required"`
+	Description string `schema:"description"`
 }
 
 type EditBookFormData struct {
-	ID          uint                 `schema:"id,required"`
-	Name        string               `schema:"name,required"`
-	Authors     []*models.BookAuthor `schema:"author,required"`
-	Description string               `schema:"description,required"`
-	Rating      *int                 `schema:"rating"`
-	Read        bool                 `schema:"read"`
+	ID          uint   `schema:"id,required"`
+	Name        string `schema:"name,required"`
+	Authors     string `schema:"author,required"`
+	Description string `schema:"description,required"`
+	Rating      *int   `schema:"rating"`
+	Read        bool   `schema:"read"`
 }
 
 func (h *BookHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
@@ -168,7 +175,9 @@ func (h *BookHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	book, err := h.bs.New(data.Name, data.Description, "", data.Author)
+	authors := strings.Split(data.Authors, ",")
+
+	book, err := h.bs.New(data.Name, data.Description, "", authors)
 	if err != nil {
 		http.Error(w, "error creating book", http.StatusInternalServerError)
 		return
@@ -221,7 +230,7 @@ func (h *BookHandler) AddBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.bs.New(data.Name, data.Description, data.Edition, data.Authors[0])
+	_, err = h.bs.New(data.Name, data.Description, data.Edition, data.Authors)
 
 	if err != nil {
 		internalServerError(w, fmt.Sprintf("error happened mapping book to author: %v", err))

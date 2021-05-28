@@ -19,14 +19,13 @@
         <input name="description" class="form-control" type="text" value="{{.Description}}">
       </div>
     </div>
-      {{ range .Authors}}
-        <div class="mb-3">
-          <label class="form-label">Author</label>
-          <div class="control">
-            <input name="author-{{.ID}}" class="form-control" type="text" value="{{.Name}}">
-          </div>
-        </div>
-      {{end}}
+
+    <div class="mb-3">
+      <label class="form-label">Authors</label>
+      <div class="control">
+        <input name="authors" class="form-control" type="text" value="{{.Authors}}">
+      </div>
+    </div>
 
     <div class="mb-3">
       <label class="form-label">Rating</label>
@@ -43,6 +42,7 @@
     </div>
 
     <button type="submit" class="btn btn-primary">Edit</button>
+    <button type="add" class="btn btn-primary">Add</button>
   </form>
 {{end}}
 

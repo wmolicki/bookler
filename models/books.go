@@ -27,7 +27,7 @@ func NewBookService(db *sqlx.DB, as *AuthorService, ba *BookAuthorService) *Book
 	return &BookService{db: db, as: as, ba: ba}
 }
 
-func (bs *BookService) New(name, description, edition, author string) (*Book, error) {
+func (bs *BookService) New(name, description, edition string, authors []string) (*Book, error) {
 	b := Book{Name: name, Description: description, Edition: edition}
 	book, err := bs.insert(&b)
 
@@ -35,10 +35,8 @@ func (bs *BookService) New(name, description, edition, author string) (*Book, er
 		return nil, fmt.Errorf("error happened during creating book: %v", err)
 	}
 
-	// TODO: multiform
-	authors := []string{author}
-
 	for _, authorName := range authors {
+		// TODO: Maybe this author is already mapped to this book (duplicates?)
 		author, err := bs.as.GetByName(authorName)
 		if err != nil {
 			switch err {
