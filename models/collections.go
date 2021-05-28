@@ -50,7 +50,8 @@ func (cs *CollectionsService) List(user *User) ([]*Collection, error) {
 	}
 
 	booksQ := `
-		SELECT b.id, b.name, b.edition, b.description, b.created_at, b.updated_at, bc.collection_id, ub.read, ub.rating
+		SELECT b.id, b.name, b.edition, b.description, b.created_at, b.updated_at, bc.collection_id, 
+		       CASE WHEN ub.read IS NULL THEN 0 ELSE ub.read END as read, ub.rating
 		FROM book_collection bc
 		JOIN books b on bc.book_id = b.id
 		JOIN collection c on bc.collection_id = c.id

@@ -23,7 +23,8 @@ func NewBookAuthorService(db *sqlx.DB) *BookAuthorService {
 func (ba *BookAuthorService) AuthorBooks(authorID uint) ([]*Book, error) {
 	var books []*Book
 
-	query := "SELECT id, created_at, updated_at, name, edition, description FROM books WHERE id = ?;"
+	query := `SELECT b.id, b.created_at, b.updated_at, b.name, b.edition, b.description
+		      FROM books b JOIN book_author ba ON ba.book_id = b.id WHERE ba.author_id = ?;`
 
 	err := ba.db.Select(&books, query, authorID)
 
