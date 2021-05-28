@@ -16,22 +16,21 @@ type Author struct {
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 	Name      string
-	BookCount int `db:"book_count"`
-	// Books []*Book `gorm:"many2many:book_author"`
 }
 
 type AuthorService struct {
 	db *sqlx.DB
+	ba *BookAuthorService
 }
 
-func NewAuthorService(db *sqlx.DB) *AuthorService {
-	return &AuthorService{db: db}
+func NewAuthorService(db *sqlx.DB, ba *BookAuthorService) *AuthorService {
+	return &AuthorService{db: db, ba: ba}
 }
 
 func (as *AuthorService) GetList() ([]*Author, error) {
 	var authors []*Author
 
-	query := "SELECT id, created_at, updated_at, name, COUNT(1) as book_count FROM authors JOIN book_author ba on authors.id = ba.author_id GROUP BY author_id;"
+	query := "SELECT id, created_at, updated_at, name FROM authors"
 
 	err := as.db.Select(&authors, query)
 
@@ -43,7 +42,7 @@ func (as *AuthorService) GetList() ([]*Author, error) {
 
 func (as *AuthorService) GetByID(id uint) (*Author, error) {
 	var author Author
-	query := "SELECT id, created_at, updated_at, name, COUNT(1) as book_count FROM authors JOIN book_author ba on authors.id = ba.author_id WHERE id = ? GROUP BY author_id;"
+	query := "SELECT id, created_at, updated_at, name FROM authors WHERE id = ?;"
 	row := as.db.QueryRowx(query, id)
 
 	if err := first(&author, row); err != nil {
@@ -51,19 +50,6 @@ func (as *AuthorService) GetByID(id uint) (*Author, error) {
 	}
 
 	return &author, nil
-}
-
-func (as *AuthorService) GetBooks(authorID uint) ([]*Book, error) {
-	var books []*Book
-
-	query := "SELECT id, created_at, updated_at, name, edition, description FROM books WHERE id = ?;"
-
-	err := as.db.Select(&books, query, authorID)
-
-	if err != nil {
-		return nil, err
-	}
-	return books, nil
 }
 
 func (as *AuthorService) GetByName(name string) (*Author, error) {

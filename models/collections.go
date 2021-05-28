@@ -15,13 +15,20 @@ type CollectionsService struct {
 	db *sqlx.DB
 }
 
+type BookInCollection struct {
+	Book
+	CollectionId uint `db:"collection_id"`
+	Read         *bool
+	Rating       *int
+}
+
 type Collection struct {
 	ID        uint
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 	Name      string
 
-	Books []*Book
+	Books []*BookInCollection
 }
 
 func (cs *CollectionsService) List(user *User) ([]*Collection, error) {
@@ -42,20 +49,16 @@ func (cs *CollectionsService) List(user *User) ([]*Collection, error) {
 		colMap[c.ID] = c
 	}
 
-	type book struct {
-		Book
-		CollectionId uint `db:"collection_id"`
-	}
-
 	booksQ := `
-		SELECT b.id, b.name, b.edition, b.description, b.created_at, b.updated_at, bc.collection_id
+		SELECT b.id, b.name, b.edition, b.description, b.created_at, b.updated_at, bc.collection_id, ub.read, ub.rating
 		FROM book_collection bc
 		JOIN books b on bc.book_id = b.id
 		JOIN collection c on bc.collection_id = c.id
+		LEFT JOIN user_book ub on b.id = ub.book_id
 		WHERE c.user_id = ?;
 	`
 
-	books := make([]*book, 0)
+	books := make([]*BookInCollection, 0)
 
 	err = cs.db.Select(&books, booksQ, user.ID)
 	if err != nil {
@@ -67,7 +70,7 @@ func (cs *CollectionsService) List(user *User) ([]*Collection, error) {
 		if !ok {
 			panic(fmt.Sprintf("there is no collectionId %v in returned collections", b.CollectionId))
 		}
-		c.Books = append(c.Books, &b.Book)
+		c.Books = append(c.Books, b)
 	}
 
 	return collections, nil

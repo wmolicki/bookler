@@ -20,7 +20,9 @@ func NewServices(configs ...ServicesConfig) (*Services, error) {
 type Services struct {
 	Book        *BookService
 	Author      *AuthorService
+	BookAuthor  *BookAuthorService
 	User        *UserService
+	UserBook    *UserBookService
 	OauthConfig *oauth2.Config
 	Collections *CollectionsService
 	db          *sqlx.DB
@@ -37,9 +39,25 @@ func WithDB(driver, dataSourceName string) ServicesConfig {
 	}
 }
 
+func WithBookAuthorService() ServicesConfig {
+	return func(s *Services) error {
+		ba := NewBookAuthorService(s.db)
+		s.BookAuthor = ba
+		return nil
+	}
+}
+
+func WithUserBookService() ServicesConfig {
+	return func(s *Services) error {
+		ub := NewUserBookService(s.db)
+		s.UserBook = ub
+		return nil
+	}
+}
+
 func WithAuthorService() ServicesConfig {
 	return func(s *Services) error {
-		as := NewAuthorService(s.db)
+		as := NewAuthorService(s.db, s.BookAuthor)
 		s.Author = as
 		return nil
 	}
@@ -47,7 +65,7 @@ func WithAuthorService() ServicesConfig {
 
 func WithBookService() ServicesConfig {
 	return func(s *Services) error {
-		bs := NewBookService(s.db, s.Author)
+		bs := NewBookService(s.db, s.Author, s.BookAuthor)
 		s.Book = bs
 		return nil
 	}

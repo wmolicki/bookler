@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-playground/validator"
 
+	"github.com/wmolicki/bookler/context"
 	"github.com/wmolicki/bookler/helpers"
 	"github.com/wmolicki/bookler/models"
 	"github.com/wmolicki/bookler/views"
@@ -18,14 +19,16 @@ var validate *validator.Validate
 var decoder = schema.NewDecoder()
 
 type BookHandler struct {
-	bs       *models.BookService
-	as       *models.AuthorService
+	bs *models.BookService
+	as *models.AuthorService
+	ub *models.UserBookService
+
 	listView *views.View
 	addView  *views.View
 	editView *views.View
 }
 
-func NewBookHandler(as *models.AuthorService, bs *models.BookService) *BookHandler {
+func NewBookHandler(as *models.AuthorService, bs *models.BookService, ub *models.UserBookService) *BookHandler {
 	listView := views.NewView("bootstrap", "templates/books.gohtml")
 	addView := views.NewView("bootstrap", "templates/book_add.gohtml")
 	editView := views.NewView("bootstrap", "templates/book_edit.gohtml")
@@ -33,7 +36,7 @@ func NewBookHandler(as *models.AuthorService, bs *models.BookService) *BookHandl
 	decoder.IgnoreUnknownKeys(true)
 
 	bs.DestructiveReset()
-	return &BookHandler{bs, as, listView, addView, editView}
+	return &BookHandler{bs, as, ub, listView, addView, editView}
 }
 
 type BooksViewModel struct {
@@ -66,6 +69,7 @@ func (h *BookHandler) Edit(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not get book", http.StatusInternalServerError)
 		return
 	}
+
 	viewModel := EditBookFormData{
 		Name:        book.Name,
 		Authors:     book.Authors,
@@ -73,12 +77,65 @@ func (h *BookHandler) Edit(w http.ResponseWriter, r *http.Request) {
 		ID:          book.ID,
 	}
 
+	user := context.User(r.Context())
+	if user != nil {
+		userBook, err := h.ub.GetUserBook(book, user)
+
+		switch err {
+		case nil:
+			viewModel.Read = userBook.Read
+			viewModel.Rating = userBook.Rating
+		case models.ErrorEntityNotFound:
+		default:
+			internalServerError(w, fmt.Sprintf("could not load user book profile: %v", err))
+			return
+		}
+	}
+
 	h.editView.Render(w, r, &viewModel)
 	return
 }
 
 func (h *BookHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
-	panic("not implemented")
+	bookId, err := helpers.ParseUintParam(r, "bookId")
+	if err != nil {
+		badRequest(w, fmt.Sprintf("could not convert param: %v", err))
+		return
+	}
+
+	book, err := h.bs.GetBookById(bookId)
+	if err != nil {
+		// TODO: switch on error type
+		http.Error(w, "could not get book", http.StatusInternalServerError)
+		return
+	}
+
+	user := context.User(r.Context())
+	if user == nil {
+		panic("signed in only!")
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		badRequest(w, err.Error())
+	}
+	var data EditBookFormData
+	err = decoder.Decode(&data, r.PostForm)
+	if err != nil {
+		panic(err)
+	}
+
+	if data.Rating != nil {
+		if _, err := h.ub.Rate(book, user, *data.Rating); err != nil {
+			http.Error(w, "could not rate book", http.StatusInternalServerError)
+			return
+		}
+	}
+	if _, err = h.ub.Read(book, user, data.Read); err != nil {
+		http.Error(w, "could not mark book as read", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, fmt.Sprintf("/books/%d", book.ID), http.StatusFound)
 }
 
 func (h *BookHandler) Add(w http.ResponseWriter, r *http.Request) {
@@ -96,6 +153,8 @@ type EditBookFormData struct {
 	Name        string               `schema:"name,required"`
 	Authors     []*models.BookAuthor `schema:"author,required"`
 	Description string               `schema:"description,required"`
+	Rating      *int                 `schema:"rating"`
+	Read        bool                 `schema:"read"`
 }
 
 func (h *BookHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
@@ -116,7 +175,6 @@ func (h *BookHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("/books/%d", book.ID), http.StatusFound)
-
 }
 
 func (h *BookHandler) Index(w http.ResponseWriter, r *http.Request) {

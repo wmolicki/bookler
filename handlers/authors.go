@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -11,25 +10,28 @@ import (
 )
 
 type AuthorsHandler struct {
-	as          *models.AuthorService
+	as *models.AuthorService
+	ba *models.BookAuthorService
+
 	ListView    *views.View
 	DetailsView *views.View
 }
 
-func NewAuthorsHandler(as *models.AuthorService) *AuthorsHandler {
+func NewAuthorsHandler(as *models.AuthorService, ba *models.BookAuthorService) *AuthorsHandler {
 	listView := views.NewView("bootstrap", "templates/authors.gohtml")
 	detailsView := views.NewView("bootstrap", "templates/author_details.gohtml")
 
-	return &AuthorsHandler{as, listView, detailsView}
+	return &AuthorsHandler{as, ba, listView, detailsView}
 }
 
-type AuthorsViewModel struct {
-	Authors []*models.Author
+type AuthorListViewModel struct {
+	Authors []*models.AuthorWithBookCount
 }
 
 type AuthorDetailsViewModel struct {
-	Author *models.Author
-	Books  []*models.Book
+	Author    *models.Author
+	Books     []*models.Book
+	BookCount int
 }
 
 func (a *AuthorsHandler) Details(w http.ResponseWriter, r *http.Request) {
@@ -45,33 +47,20 @@ func (a *AuthorsHandler) Details(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	books, err := a.as.GetBooks(authorId)
+	books, err := a.ba.AuthorBooks(author.ID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("could not get authors books: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	a.DetailsView.Render(w, r, &AuthorDetailsViewModel{author, books})
+	a.DetailsView.Render(w, r, &AuthorDetailsViewModel{author, books, len(books)})
 }
 
 func (a *AuthorsHandler) List(w http.ResponseWriter, r *http.Request) {
-	authors, err := a.as.GetList()
+	authors, err := a.ba.AuthorsWithBookCount()
 	if err != nil {
 		internalServerError(w, fmt.Sprintf("could not load Authors: %v", err))
 		return
 	}
-	a.ListView.Render(w, r, AuthorsViewModel{Authors: authors})
-}
-
-func (a *AuthorsHandler) Index(w http.ResponseWriter, r *http.Request) {
-	authors, err := a.as.GetList()
-
-	if err != nil {
-		internalServerError(w, fmt.Sprintf("could not query for authors: %v", err))
-		return
-	}
-
-	b, _ := json.Marshal(authors)
-
-	w.Write(b)
+	a.ListView.Render(w, r, AuthorListViewModel{Authors: authors})
 }

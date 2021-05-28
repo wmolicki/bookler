@@ -1,4 +1,4 @@
-{{- /*gotype: github.com/wmolicki/bookler/handlers.AuthorsViewModel*/ -}}
+{{- /*gotype: github.com/wmolicki/bookler/handlers.AuthorListViewModel*/ -}}
 {{ define "yield"}}
   <h1>Authors</h1>
   <table class="table">
@@ -10,7 +10,7 @@
     </tr>
     </thead>
     <tbody>
-    {{ range .Authors}}
+    {{ range .Authors }}
       <tr>
         <td><a href="/authors/{{.ID}}">{{.ID}}</a></td>
         <td>{{.Name}}</td>

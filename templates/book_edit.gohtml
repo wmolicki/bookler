@@ -1,6 +1,6 @@
 {{- /*gotype: github.com/wmolicki/bookler/handlers.EditBookFormData*/ -}}
 {{ define "yield"}}
-  <h1>Book "{{ .Name }}</h1>
+  <h1>Book "{{ .Name }}"</h1>
   <form method="post">
       {{ csrfField }}
 
@@ -27,6 +27,20 @@
           </div>
         </div>
       {{end}}
+
+    <div class="mb-3">
+      <label class="form-label">Rating</label>
+      <div class="control">
+        <input name="rating" class="form-control" type="number" value="{{.Rating}}">
+      </div>
+    </div>
+
+    <div class="mb-3 form-check">
+      <input class="form-check-input" name="read" type="checkbox" id="flexCheckChecked" {{ if .Read }}checked{{end}}>
+      <label class="form-check-label" for="flexCheckChecked">
+        Read
+      </label>
+    </div>
 
     <button type="submit" class="btn btn-primary">Edit</button>
   </form>

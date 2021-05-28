@@ -7,11 +7,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type BookAuthor struct {
-	ID   uint
-	Name string
-}
-
 type Book struct {
 	ID          uint
 	CreatedAt   time.Time `db:"created_at"`
@@ -25,10 +20,11 @@ type Book struct {
 type BookService struct {
 	db *sqlx.DB
 	as *AuthorService
+	ba *BookAuthorService
 }
 
-func NewBookService(db *sqlx.DB, as *AuthorService) *BookService {
-	return &BookService{db: db, as: as}
+func NewBookService(db *sqlx.DB, as *AuthorService, ba *BookAuthorService) *BookService {
+	return &BookService{db: db, as: as, ba: ba}
 }
 
 func (bs *BookService) New(name, description, edition, author string) (*Book, error) {
@@ -97,18 +93,9 @@ func (bs *BookService) GetBookById(id uint) (*Book, error) {
 		return nil, err
 	}
 
-	var authors []*BookAuthor
-	query = "SELECT id, name FROM authors a JOIN book_author ba ON a.id = ba.author_id WHERE ba.book_id = ?"
-	rows, err := bs.db.Queryx(query, id)
+	authors, err := bs.ba.BookAuthors(book.ID)
 	if err != nil {
 		return nil, err
-	}
-	for rows.Next() {
-		ba := BookAuthor{}
-		if err := rows.StructScan(&ba); err != nil {
-			return nil, err
-		}
-		authors = append(authors, &ba)
 	}
 	book.Authors = authors
 

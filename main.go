@@ -6,13 +6,12 @@ import (
 
 	"github.com/gorilla/mux"
 
+	chiMw "github.com/go-chi/chi/v5/middleware"
+
 	"github.com/wmolicki/bookler/handlers"
 	"github.com/wmolicki/bookler/helpers"
 	"github.com/wmolicki/bookler/middleware"
 	"github.com/wmolicki/bookler/models"
-	"github.com/wmolicki/bookler/oauth"
-
-	chiMw "github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
@@ -20,10 +19,12 @@ func main() {
 
 	services, err := models.NewServices(
 		models.WithDB("sqlite3", "./books_v2.db"),
+		models.WithBookAuthorService(),
 		models.WithAuthorService(),
 		models.WithBookService(),
 		models.WithUserService(),
-		models.WithOauthConfig(oauth.NewConfig()),
+		models.WithUserBookService(),
+		models.WithOauthConfig(handlers.NewConfig()),
 		models.WithCollectionsService(),
 	)
 	helpers.Must(err)
@@ -37,8 +38,8 @@ func main() {
 	r.Handle("/", static.Index).Methods(http.MethodGet)
 	r.Handle("/about", static.About).Methods(http.MethodGet)
 
-	b := handlers.NewBookHandler(services.Author, services.Book)
-	a := handlers.NewAuthorsHandler(services.Author)
+	b := handlers.NewBookHandler(services.Author, services.Book, services.UserBook)
+	a := handlers.NewAuthorsHandler(services.Author, services.BookAuthor)
 	u := handlers.NewUserHandler(services.User)
 	c := handlers.NewCollectionsHandler(services.User, services.Book, services.Collections)
 
@@ -53,7 +54,7 @@ func main() {
 	r.HandleFunc("/authors", a.List)
 	r.HandleFunc("/authors/{authorId:[0-9]+}", a.Details).Methods(http.MethodGet)
 
-	oh := oauth.NewOauthHandler(services.OauthConfig, services.User)
+	oh := handlers.NewOauthHandler(services.OauthConfig, services.User)
 	r.HandleFunc("/oauth/google/connect", oh.SetCookieRedirect).Methods(http.MethodGet)
 	r.HandleFunc("/oauth/google/callback", oh.Callback).Methods(http.MethodGet)
 	r.HandleFunc("/tokensignin", oh.TokenSignIn).Methods(http.MethodPost)
@@ -63,9 +64,6 @@ func main() {
 	r.HandleFunc("/api/v1/books", b.Index).Methods(http.MethodGet)
 	r.HandleFunc("/api/v/books", b.AddBook).Methods(http.MethodPost)
 	r.HandleFunc("/api/v1/books/{bookId:[0-9]+}", b.UpdateBook).Methods(http.MethodPatch)
-
-	r.HandleFunc("/api/v1/authors", a.Index).Methods(http.MethodGet)
-	// r.HandleFunc("/authors", a.Index)
 
 	staticHandler := http.FileServer(http.Dir("./static"))
 	staticHandler = http.StripPrefix("/static/", staticHandler)
