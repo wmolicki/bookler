@@ -31,7 +31,7 @@
       <label class="form-label">Rating</label>
       <select name="rating" class="form-select" aria-label=".form-select-lg example">
         {{$rating := .Rating}}
-        <option {{ if eq $rating -1 }}selected{{end}}value="-1" selected>Select rating</option>
+        <option {{ if eq $rating -1 }}selected{{end}} value="-1">Select rating</option>
 
         {{ range .Ratings}}
           <option {{ if eq $rating . }}selected{{end}} value="{{.}}">{{.}}</option>
@@ -47,6 +47,7 @@
     </div>
 
     <button type="submit" class="btn btn-outline-primary">Edit</button>
+    <button type="submit" formaction="/books/{{.ID}}/delete" class="btn btn-outline-danger">Delete</button>
   </form>
 {{end}}
 

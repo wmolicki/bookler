@@ -63,7 +63,6 @@ func (o *OauthHandler) SignOut(w http.ResponseWriter, r *http.Request) {
 
 // TokenSignIn receives the id_token from google sign in, verifies it, will create user (if not exists) and user session
 func (o *OauthHandler) TokenSignIn(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
 	decoder := json.NewDecoder(r.Body)
 	var data tokenSignInData
 	err := decoder.Decode(&data)

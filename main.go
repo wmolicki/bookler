@@ -44,12 +44,20 @@ func main() {
 	c := handlers.NewCollectionsHandler(services.User, services.Book, services.Collections)
 
 	r.HandleFunc("/collections", c.List).Methods(http.MethodGet)
+	r.HandleFunc("/collections/add", c.Add).Methods(http.MethodGet)
+	r.HandleFunc("/collections/add", c.HandleAdd).Methods(http.MethodPost)
+	r.HandleFunc("/collections/{collectionId:[0-9]+}/delete", c.HandleDelete).Methods(http.MethodPost)
+	r.HandleFunc("/collections/{collectionId:[0-9]+}/book/add", c.HandleAddBook).Methods(http.MethodPost)
+	r.HandleFunc("/collections/{collectionId:[0-9]+}", c.Edit).Methods(http.MethodGet)
+	r.HandleFunc("/collections/{collectionId:[0-9]+}", c.HandleEdit).Methods(http.MethodPost)
+	r.HandleFunc("/collections/{collectionId:[0-9]+}/book/{bookId:[0-9]+}/delete", c.HandleBookDelete).Methods(http.MethodPost)
 
 	r.HandleFunc("/books", b.List).Methods(http.MethodGet)
 	r.HandleFunc("/books/add", b.Add).Methods(http.MethodGet)
 	r.HandleFunc("/books/add", b.HandleAdd).Methods(http.MethodPost)
 	r.HandleFunc("/books/{bookId:[0-9]+}", b.Edit).Methods(http.MethodGet)
 	r.HandleFunc("/books/{bookId:[0-9]+}", b.HandleEdit).Methods(http.MethodPost)
+	r.HandleFunc("/books/{bookId:[0-9]+}/delete", b.HandleDelete).Methods(http.MethodPost)
 
 	r.HandleFunc("/authors", a.List).Methods(http.MethodGet)
 	r.HandleFunc("/authors/{authorId:[0-9]+}", a.Details).Methods(http.MethodGet)

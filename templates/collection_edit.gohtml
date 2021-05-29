@@ -1,0 +1,63 @@
+{{define "yield"}}
+  <h1>Collection "{{.Name}}"</h1>
+  <section>
+    <form method="post">
+        {{ csrfField }}
+      <input name="id" class="hidden" hidden type="text" value="{{.ID}}">
+
+      <div class="mb-3">
+        <label class="form-label">Name</label>
+        <div class="control">
+          <input name="name" class="form-control" type="text" value="{{ .Name}}">
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-outline-primary">Edit</button>
+    </form>
+  </section>
+  <section>
+    <h3>Books in this collection</h3>
+    <form method="post" action="/collections/{{.ID}}/book/add">
+      <div class="input-group mb-3">
+      <button class="btn btn-outline-secondary" type="submit">Add</button>
+      <input class="form-control" name="name" list="datalistOptions" placeholder="Type to search...">
+      <datalist id="datalistOptions">
+        {{ range .Books }}
+          <option value="{{.Name}}"></option>
+        {{end}}
+      </datalist>
+      </div>
+    </form>
+    <table class="table">
+      <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Edition</th>
+        <th>Read</th>
+        <th>Rating</th>
+        <th>Action</th>
+      </tr>
+      </thead>
+      <tbody>
+        {{ $colID := .ID }}
+        {{range .CollectionBooks}}
+          <tr>
+            <td><a class="is-link" href="/books/{{.ID}}">{{.ID}}</a></td>
+            <td>{{.Name}}</td>
+            <td>{{.Description}}</td>
+            <td>{{.Edition}}</td>
+            <td>{{.Read}}</td>
+            <td>{{if eq .Rating -1}}-{{else}}{{.Rating}}{{end}}</td>
+            <td>
+              <form method="post" action="/collections/{{ $colID }}/book/{{.ID}}/delete">
+                <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+              </form>
+            </td>
+          </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </section>
+{{end}}

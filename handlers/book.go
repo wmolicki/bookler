@@ -108,6 +108,9 @@ func (h *BookHandler) Edit(w http.ResponseWriter, r *http.Request) {
 			}
 			viewModel.Rating = rating
 		case models.ErrorEntityNotFound:
+			// TODO: ugly hack for now (default (0) value should mean no rating, instead
+			// of having -1... maybe change no rating value to 0, and have minimal rating as 1/10
+			viewModel.Rating = -1
 		default:
 			log.Errorf("could not load user book profile: %v", err)
 			internalServerError(w, "could not load user book profile")
@@ -179,7 +182,32 @@ func (h *BookHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not mark book as read", http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, fmt.Sprintf("/books/%d", book.ID), http.StatusFound)
+	http.Redirect(w, r, "/books", http.StatusFound)
+}
+
+func (h *BookHandler) HandleDelete(w http.ResponseWriter, r *http.Request) {
+	bookId, err := helpers.ParseUintParam(r, "bookId")
+	if err != nil {
+		badRequest(w, fmt.Sprintf("could not convert param: %v", err))
+		return
+	}
+
+	book, err := h.bs.GetBookByID(bookId)
+	if err != nil {
+		// TODO: switch on error type
+		log.Errorf("could not get book: %v", err)
+		http.Error(w, "could not get book", http.StatusInternalServerError)
+		return
+	}
+
+	err = h.bs.Delete(book)
+	if err != nil {
+		log.Errorf("could not delete book: %v", err)
+		http.Error(w, "could not delete book", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/books", http.StatusFound)
 }
 
 func (h *BookHandler) Add(w http.ResponseWriter, r *http.Request) {
