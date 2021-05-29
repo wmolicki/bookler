@@ -34,6 +34,7 @@ func (ub *UserBookService) Read(b *Book, u *User, read bool) (*UserBook, error) 
 	return userBook, err
 }
 
+// Rate will add rating to the book - rating set to -1 means it's not rated yet
 func (ub *UserBookService) Rate(b *Book, u *User, rating int) (*UserBook, error) {
 	userBook, err := ub.getOrCreateUserBook(b, u)
 	if err != nil {

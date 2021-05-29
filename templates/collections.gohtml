@@ -25,7 +25,7 @@
                 <td>{{.Description}}</td>
                 <td>{{.Edition}}</td>
                 <td>{{.Read}}</td>
-                <td>{{.Rating}}</td>
+                <td>{{if eq .Rating -1}}-{{else}}{{.Rating}}{{end}}</td>
               </tr>
             {{end}}
             </tbody>

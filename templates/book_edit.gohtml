@@ -29,9 +29,14 @@
 
     <div class="mb-3">
       <label class="form-label">Rating</label>
-      <div class="control">
-        <input name="rating" class="form-control" type="number" value="{{.Rating}}">
-      </div>
+      <select name="rating" class="form-select" aria-label=".form-select-lg example">
+        {{$rating := .Rating}}
+        <option {{ if eq $rating -1 }}selected{{end}}value="-1" selected>Select rating</option>
+
+        {{ range .Ratings}}
+          <option {{ if eq $rating . }}selected{{end}} value="{{.}}">{{.}}</option>
+        {{ end }}
+      </select>
     </div>
 
     <div class="mb-3 form-check">
@@ -42,7 +47,6 @@
     </div>
 
     <button type="submit" class="btn btn-primary">Edit</button>
-    <button type="add" class="btn btn-primary">Add</button>
   </form>
 {{end}}
 

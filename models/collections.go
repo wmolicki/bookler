@@ -19,7 +19,7 @@ type BookInCollection struct {
 	Book
 	CollectionId uint `db:"collection_id"`
 	Read         *bool
-	Rating       *int
+	Rating       int
 }
 
 type Collection struct {

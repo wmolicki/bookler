@@ -77,12 +77,17 @@ func (h *BookHandler) Edit(w http.ResponseWriter, r *http.Request) {
 	}
 	authors := strings.Join(authorsSl, ", ")
 
-	viewModel := EditBookFormData{
-		Name:        book.Name,
-		Authors:     authors,
-		Description: book.Description,
-		ID:          book.ID,
-	}
+	viewModel := struct {
+		EditBookFormData
+		Ratings []int
+	}{
+		Ratings: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+		EditBookFormData: EditBookFormData{
+			Name:        book.Name,
+			Authors:     authors,
+			Description: book.Description,
+			ID:          book.ID,
+		}}
 
 	user := context.User(r.Context())
 	if user != nil {
@@ -91,7 +96,13 @@ func (h *BookHandler) Edit(w http.ResponseWriter, r *http.Request) {
 		switch err {
 		case nil:
 			viewModel.Read = userBook.Read
-			viewModel.Rating = userBook.Rating
+			var rating int
+			if userBook.Rating != nil {
+				rating = *userBook.Rating
+			} else {
+				rating = -1
+			}
+			viewModel.Rating = rating
 		case models.ErrorEntityNotFound:
 		default:
 			internalServerError(w, fmt.Sprintf("could not load user book profile: %v", err))
@@ -132,12 +143,11 @@ func (h *BookHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	if data.Rating != nil {
-		if _, err := h.ub.Rate(book, user, *data.Rating); err != nil {
-			http.Error(w, "could not rate book", http.StatusInternalServerError)
-			return
-		}
+	if _, err := h.ub.Rate(book, user, data.Rating); err != nil {
+		http.Error(w, "could not rate book", http.StatusInternalServerError)
+		return
 	}
+
 	if _, err = h.ub.Read(book, user, data.Read); err != nil {
 		http.Error(w, "could not mark book as read", http.StatusInternalServerError)
 		return
@@ -160,7 +170,7 @@ type EditBookFormData struct {
 	Name        string `schema:"name,required"`
 	Authors     string `schema:"author,required"`
 	Description string `schema:"description,required"`
-	Rating      *int   `schema:"rating"`
+	Rating      int    `schema:"rating"`
 	Read        bool   `schema:"read"`
 }
 
