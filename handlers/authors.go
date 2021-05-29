@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/wmolicki/bookler/helpers"
 	"github.com/wmolicki/bookler/models"
 	"github.com/wmolicki/bookler/views"
@@ -54,6 +56,30 @@ func (a *AuthorsHandler) Details(w http.ResponseWriter, r *http.Request) {
 	}
 
 	a.DetailsView.Render(w, r, &AuthorDetailsViewModel{author, books, len(books)})
+}
+
+func (a *AuthorsHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	authorId, err := helpers.ParseUintParam(r, "authorId")
+	if err != nil {
+		http.Error(w, "could not parse request param", http.StatusBadRequest)
+		return
+	}
+
+	author, err := a.as.GetByID(authorId)
+	if err != nil {
+		log.Errorf("could not get author: %v", err)
+		http.Error(w, "could not find author", http.StatusNotFound)
+		return
+	}
+
+	if err = a.as.Delete(author); err != nil {
+		log.Errorf("could not delete author: %v", err)
+		http.Error(w, "error deleting author", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/authors", http.StatusFound)
+	return
 }
 
 func (a *AuthorsHandler) List(w http.ResponseWriter, r *http.Request) {

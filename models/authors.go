@@ -1,15 +1,13 @@
 package models
 
 import (
-	"errors"
+	"context"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 )
-
-var ErrorEntityNotFound = errors.New("entity does not exists")
 
 type Author struct {
 	ID        uint
@@ -20,11 +18,10 @@ type Author struct {
 
 type AuthorService struct {
 	db *sqlx.DB
-	ba *BookAuthorService
 }
 
-func NewAuthorService(db *sqlx.DB, ba *BookAuthorService) *AuthorService {
-	return &AuthorService{db: db, ba: ba}
+func NewAuthorService(db *sqlx.DB) *AuthorService {
+	return &AuthorService{db: db}
 }
 
 func (as *AuthorService) GetList() ([]*Author, error) {
@@ -77,6 +74,20 @@ func (as *AuthorService) Create(author *Author) (*Author, error) {
 	id := uint(authorId)
 	insertedAuthor, err := as.GetByID(id)
 	return insertedAuthor, err
+}
+
+func (as *AuthorService) Delete(author *Author) error {
+	ctx := context.Background()
+	tx, err := as.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	query1 := `DELETE from book_author WHERE author_id = ?`
+	query := `DELETE from authors WHERE id = ?`
+	tx.Exec(query1, author.ID)
+	tx.Exec(query, author.ID)
+
+	return tx.Commit()
 }
 
 func (as *AuthorService) DestructiveReset() {

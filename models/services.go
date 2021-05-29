@@ -41,7 +41,7 @@ func WithDB(driver, dataSourceName string) ServicesConfig {
 
 func WithBookAuthorService() ServicesConfig {
 	return func(s *Services) error {
-		ba := NewBookAuthorService(s.db)
+		ba := NewBookAuthorService(s.db, s.Author, s.Book)
 		s.BookAuthor = ba
 		return nil
 	}
@@ -57,7 +57,7 @@ func WithUserBookService() ServicesConfig {
 
 func WithAuthorService() ServicesConfig {
 	return func(s *Services) error {
-		as := NewAuthorService(s.db, s.BookAuthor)
+		as := NewAuthorService(s.db)
 		s.Author = as
 		return nil
 	}
@@ -65,7 +65,7 @@ func WithAuthorService() ServicesConfig {
 
 func WithBookService() ServicesConfig {
 	return func(s *Services) error {
-		bs := NewBookService(s.db, s.Author, s.BookAuthor)
+		bs := NewBookService(s.db)
 		s.Book = bs
 		return nil
 	}

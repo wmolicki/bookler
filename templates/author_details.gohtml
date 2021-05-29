@@ -1,8 +1,22 @@
 {{- /*gotype: github.com/wmolicki/bookler/handlers.AuthorDetailsViewModel*/ -}}
 {{ define "yield"}}
-  <h1 class="title">Author - {{ .Author.Name }}</h1>
-  <p>Written: <strong>{{ .BookCount }}</strong> books</p>
-  <div>
+  <h1 class="title">Author "{{ .Author.Name }}"</h1>
+  <div class="mb-3">
+    <form method="post">
+        {{ csrfField }}
+
+      <div class="mb-3">
+        <label class="form-label" for="name">Name</label>
+        <div class="control">
+          <input name="name" class="form-control" type="text" value="{{ .Author.Name}}">
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-outline-primary" formaction="/authors/{{.Author.ID}}/edit">Edit</button>
+      <button type="submit" class="btn btn-outline-danger" formaction="/authors/{{.Author.ID}}/delete">Delete</button>
+    </form>
+  </div>
+  <div class="mb-3">
     <table class="table">
       <thead>
       <tr>

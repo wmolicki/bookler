@@ -19,9 +19,9 @@ func main() {
 
 	services, err := models.NewServices(
 		models.WithDB("sqlite3", "./books_v2.db"),
-		models.WithBookAuthorService(),
 		models.WithAuthorService(),
 		models.WithBookService(),
+		models.WithBookAuthorService(),
 		models.WithUserService(),
 		models.WithUserBookService(),
 		models.WithOauthConfig(handlers.NewConfig()),
@@ -38,7 +38,7 @@ func main() {
 	r.Handle("/", static.Index).Methods(http.MethodGet)
 	r.Handle("/about", static.About).Methods(http.MethodGet)
 
-	b := handlers.NewBookHandler(services.Author, services.Book, services.UserBook)
+	b := handlers.NewBookHandler(services.Author, services.BookAuthor, services.Book, services.UserBook)
 	a := handlers.NewAuthorsHandler(services.Author, services.BookAuthor)
 	u := handlers.NewUserHandler(services.User)
 	c := handlers.NewCollectionsHandler(services.User, services.Book, services.Collections)
@@ -51,8 +51,9 @@ func main() {
 	r.HandleFunc("/books/{bookId:[0-9]+}", b.Edit).Methods(http.MethodGet)
 	r.HandleFunc("/books/{bookId:[0-9]+}", b.HandleEdit).Methods(http.MethodPost)
 
-	r.HandleFunc("/authors", a.List)
+	r.HandleFunc("/authors", a.List).Methods(http.MethodGet)
 	r.HandleFunc("/authors/{authorId:[0-9]+}", a.Details).Methods(http.MethodGet)
+	r.HandleFunc("/authors/{authorId:[0-9]+}/delete", a.Delete).Methods(http.MethodPost)
 
 	oh := handlers.NewOauthHandler(services.OauthConfig, services.User)
 	r.HandleFunc("/oauth/google/connect", oh.SetCookieRedirect).Methods(http.MethodGet)

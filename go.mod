@@ -12,7 +12,9 @@ require (
 	github.com/jmoiron/sqlx v1.3.3
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mattn/go-sqlite3 v1.14.7
+	github.com/sirupsen/logrus v1.8.1 // indirect
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
+	golang.org/x/sys v0.0.0-20210525143221-35b2ab0089ea // indirect
 	google.golang.org/api v0.47.0
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 )

@@ -1,11 +1,19 @@
 {{- /*gotype: github.com/wmolicki/bookler/handlers.CollectionsListViewModel*/ -}}
 {{define "yield"}}
   <h1>Collections</h1>
-  <div class="container">
+  <div>
+    <div class="md-3">
+      <p>
+        <a href="/books/add"><button class="btn btn-outline-success">Add</button></a>
+      </p>
+    </div>
     <div>
       {{ range .Collections }}
-        <div class="container">
-          <p>{{.Name}}</p>
+        <div class="md-3">
+          <div class="clearfix bg-light">
+              <span>{{.Name}}</span>
+            <button class="btn btn-outline-primary float-end" type="submit">Edit</button>
+          </div>
           <table class="table">
             <thead>
             <tr>

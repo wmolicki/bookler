@@ -1,8 +1,9 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/wmolicki/bookler/context"
 	"github.com/wmolicki/bookler/models"
@@ -31,7 +32,8 @@ func (c *CollectionsHandler) List(w http.ResponseWriter, r *http.Request) {
 	user := context.User(r.Context())
 	collections, err := c.cs.List(user)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("could not load collections: %v", err), http.StatusInternalServerError)
+		log.Errorf("could not load collections: %v", err)
+		http.Error(w, "could not load collections", http.StatusInternalServerError)
 		return
 	}
 	c.listView.Render(w, r, &CollectionsListViewModel{collections})

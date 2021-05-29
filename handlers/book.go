@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/gorilla/schema"
 
 	"github.com/go-playground/validator"
@@ -21,6 +23,7 @@ var decoder = schema.NewDecoder()
 
 type BookHandler struct {
 	bs *models.BookService
+	ba *models.BookAuthorService
 	as *models.AuthorService
 	ub *models.UserBookService
 
@@ -29,7 +32,7 @@ type BookHandler struct {
 	editView *views.View
 }
 
-func NewBookHandler(as *models.AuthorService, bs *models.BookService, ub *models.UserBookService) *BookHandler {
+func NewBookHandler(as *models.AuthorService, ba *models.BookAuthorService, bs *models.BookService, ub *models.UserBookService) *BookHandler {
 	listView := views.NewView("bootstrap", "templates/books.gohtml")
 	addView := views.NewView("bootstrap", "templates/book_add.gohtml")
 	editView := views.NewView("bootstrap", "templates/book_edit.gohtml")
@@ -37,7 +40,7 @@ func NewBookHandler(as *models.AuthorService, bs *models.BookService, ub *models
 	decoder.IgnoreUnknownKeys(true)
 
 	bs.DestructiveReset()
-	return &BookHandler{bs, as, ub, listView, addView, editView}
+	return &BookHandler{bs, ba, as, ub, listView, addView, editView}
 }
 
 type BooksViewModel struct {
@@ -64,9 +67,10 @@ func (h *BookHandler) Edit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	book, err := h.bs.GetBookById(bookId)
+	book, err := h.ba.GetBookByID(bookId)
 	if err != nil {
 		// TODO: switch on error type
+		log.Errorf("error getting book: %v", err)
 		http.Error(w, "could not get book", http.StatusInternalServerError)
 		return
 	}
@@ -105,7 +109,8 @@ func (h *BookHandler) Edit(w http.ResponseWriter, r *http.Request) {
 			viewModel.Rating = rating
 		case models.ErrorEntityNotFound:
 		default:
-			internalServerError(w, fmt.Sprintf("could not load user book profile: %v", err))
+			log.Errorf("could not load user book profile: %v", err)
+			internalServerError(w, "could not load user book profile")
 			return
 		}
 	}
@@ -121,9 +126,10 @@ func (h *BookHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	book, err := h.bs.GetBookById(bookId)
+	book, err := h.bs.GetBookByID(bookId)
 	if err != nil {
 		// TODO: switch on error type
+		log.Errorf("could not get book: %v", err)
 		http.Error(w, "could not get book", http.StatusInternalServerError)
 		return
 	}
@@ -143,12 +149,33 @@ func (h *BookHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+	book.Name = data.Name
+	book.Description = data.Description
+	book.Edition = data.Edition
+
+	book, err = h.bs.Update(book)
+	if err != nil {
+		log.Errorf("error updating book: %v", err)
+		http.Error(w, "error updating book", http.StatusInternalServerError)
+		return
+	}
+
+	authors := splitAuthors(data.Authors)
+	err = h.ba.UpdateBookAuthors(book, authors)
+	if err != nil {
+		log.Errorf("could not load update book authors: %v", err)
+		http.Error(w, "could not update book authors", http.StatusInternalServerError)
+		return
+	}
+
 	if _, err := h.ub.Rate(book, user, data.Rating); err != nil {
+		log.Errorf("could not rate book: %v", err)
 		http.Error(w, "could not rate book", http.StatusInternalServerError)
 		return
 	}
 
 	if _, err = h.ub.Read(book, user, data.Read); err != nil {
+		log.Errorf("could not mark book as read: %v", err)
 		http.Error(w, "could not mark book as read", http.StatusInternalServerError)
 		return
 	}
@@ -168,10 +195,19 @@ type AddBookFormData struct {
 type EditBookFormData struct {
 	ID          uint   `schema:"id,required"`
 	Name        string `schema:"name,required"`
-	Authors     string `schema:"author,required"`
+	Authors     string `schema:"authors,required"`
 	Description string `schema:"description,required"`
+	Edition     string `schema:"edition"`
 	Rating      int    `schema:"rating"`
 	Read        bool   `schema:"read"`
+}
+
+func splitAuthors(authors string) []string {
+	authorsSl := strings.Split(authors, ",")
+	for i, a := range authorsSl {
+		authorsSl[i] = strings.TrimSpace(a)
+	}
+	return authorsSl
 }
 
 func (h *BookHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
@@ -185,11 +221,18 @@ func (h *BookHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	authors := strings.Split(data.Authors, ",")
+	authors := splitAuthors(data.Authors)
 
 	book, err := h.bs.New(data.Name, data.Description, "", authors)
 	if err != nil {
+		log.Errorf("could not create book: %v", err)
 		http.Error(w, "error creating book", http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.ba.UpdateBookAuthors(book, authors); err != nil {
+		log.Errorf("could not map book too authors: %v", err)
+		http.Error(w, "error happened mapping book to authors", http.StatusInternalServerError)
 		return
 	}
 
@@ -199,7 +242,8 @@ func (h *BookHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
 func (h *BookHandler) Index(w http.ResponseWriter, r *http.Request) {
 	books, err := h.bs.GetList()
 	if err != nil {
-		internalServerError(w, fmt.Sprintf("could not load books: %v", err))
+		log.Errorf("could not load books: %v", err)
+		internalServerError(w, "could not load books")
 		return
 	}
 	//_ := template.New("templates/books.gohtml")
@@ -243,7 +287,8 @@ func (h *BookHandler) AddBook(w http.ResponseWriter, r *http.Request) {
 	_, err = h.bs.New(data.Name, data.Description, data.Edition, data.Authors)
 
 	if err != nil {
-		internalServerError(w, fmt.Sprintf("error happened mapping book to author: %v", err))
+		log.Errorf("could not map book to authors: %v", err)
+		internalServerError(w, "error happened mapping book to author")
 		return
 	}
 
@@ -280,7 +325,7 @@ func (h *BookHandler) UpdateBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	book, err := h.bs.GetBookById(bookId)
+	book, err := h.bs.GetBookByID(bookId)
 	if err != nil {
 		notFound(w, fmt.Sprintf("could not get book by id: %v", err))
 		return
@@ -296,7 +341,7 @@ func (h *BookHandler) UpdateBook(w http.ResponseWriter, r *http.Request) {
 	book.Edition = data.Edition
 	book.Description = data.Description
 
-	err = h.bs.Update(book)
+	_, err = h.bs.Update(book)
 	if err != nil {
 		internalServerError(w, fmt.Sprintf("could not update book: %v", err))
 		return
