@@ -20,8 +20,8 @@ type AuthorsHandler struct {
 }
 
 func NewAuthorsHandler(as *models.AuthorService, ba *models.BookAuthorService) *AuthorsHandler {
-	listView := views.NewView("bootstrap", "templates/authors.gohtml")
-	detailsView := views.NewView("bootstrap", "templates/author_details.gohtml")
+	listView := views.NewView("bulma", "templates/authors.gohtml")
+	detailsView := views.NewView("bulma", "templates/author_edit.gohtml")
 
 	return &AuthorsHandler{as, ba, listView, detailsView}
 }
@@ -36,7 +36,50 @@ type AuthorDetailsViewModel struct {
 	BookCount int
 }
 
-func (a *AuthorsHandler) Details(w http.ResponseWriter, r *http.Request) {
+func (a *AuthorsHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
+	authorId, err := helpers.ParseUintParam(r, "authorId")
+	if err != nil {
+		http.Error(w, "could not parse request param", http.StatusBadRequest)
+		return
+	}
+
+	var authorEditFormData struct {
+		Name string
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		log.Errorf("could not parse form data: %v", err)
+		http.Error(w, "error editing author", http.StatusInternalServerError)
+		return
+	}
+
+	err = decoder.Decode(&authorEditFormData, r.PostForm)
+	if err != nil {
+		log.Errorf("could not decode form data: %v", err)
+		http.Error(w, "error editing author", http.StatusInternalServerError)
+		return
+	}
+
+	author, err := a.as.GetByID(authorId)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("could not get author by id: %v", err), http.StatusNotFound)
+		return
+	}
+
+	author.Name = authorEditFormData.Name
+
+	_, err = a.as.Update(author)
+	if err != nil {
+		log.Errorf("error updating author: %v", err)
+		http.Error(w, "error updating author", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/authors/%d", author.ID), http.StatusFound)
+}
+
+func (a *AuthorsHandler) Edit(w http.ResponseWriter, r *http.Request) {
 	authorId, err := helpers.ParseUintParam(r, "authorId")
 	if err != nil {
 		http.Error(w, "could not parse request param", http.StatusBadRequest)

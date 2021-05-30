@@ -61,6 +61,22 @@ func (as *AuthorService) GetByName(name string) (*Author, error) {
 	return &author, nil
 }
 
+func (as *AuthorService) Update(a *Author) (*Author, error) {
+	query := `UPDATE authors SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+
+	_, err := as.db.Exec(query, a.Name, a.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	a, err = as.GetByID(a.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return a, nil
+}
+
 func (as *AuthorService) Create(author *Author) (*Author, error) {
 	query := "INSERT INTO authors (name) VALUES (?)"
 	result, err := as.db.Exec(query, author.Name)

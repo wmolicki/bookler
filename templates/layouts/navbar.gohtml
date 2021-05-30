@@ -1,63 +1,71 @@
 {{- /*gotype: github.com/wmolicki/bookler/views.Data*/ -}}
 {{define "navbar"}}
-  <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
-    <div class="container">
-      <a class="navbar-brand" href="/">Bookler</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
-              aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="/">Home</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/books">Books</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/authors">Authors</a>
-          </li>
-          {{ if signedIn }}
-            <li class="nav-item">
-              <a class="nav-link" href="/collections">Collections</a>
-            </li>
-          {{end}}
-          <li class="nav-item">
-            <a class="nav-link" href="/about">About</a>
-          </li>
-        </ul>
-        <div lang="">
-            {{if signedIn }}
-              <form method="POST" action="/sign_out" id="signOutForm">
-                <input class="btn btn-outline-primary" type="submit" hidden/>
-              </form>
-              <div class="dropdown text-end">
-                <a href="#" class="d-block link-dark text-decoration-none dropdown-toggle" id="dropdownUser1"
-                   data-bs-toggle="dropdown" aria-expanded="false">
-                  <img src="{{.User.ProfileImageUrl}}" alt="{{.User.Name}}" width="32" height="32" class="rounded-circle">
-                </a>
-                <ul class="dropdown-menu text-small dropdown-menu-lg-end" aria-labelledby="dropdownUser1" style="">
-                  <li><a class="dropdown-item" href="#">{{.User.Name}}</a></li>
-                  <li>
-                    <hr class="dropdown-divider">
-                  </li>
-                  <li><a class="dropdown-item" href="#" onclick="submit()">Sign out</a></li>
-                </ul>
-              </div>
-            {{else}}
-              <a href="/sign_in">
-                <button class="btn btn-outline-primary" type="submit">Sign In</button>
-              </a>
-            {{end}}
-        </div>
+  <nav class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="/"><strong>Bookler</strong></a>
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
 
+    <div class="navbar-menu">
+      <div class="navbar-start">
+        <a class="navbar-item" href="/">
+          Home
+        </a>
+        <a class="navbar-item" href="/books">
+          Books
+        </a>
+        <a class="navbar-item" href="/authors">
+          Authors
+        </a>
+          {{if signedIn }}
+            <a class="navbar-item" href="/collections">
+              Collections
+            </a>
+          {{ end }}
+        <a class="navbar-item" href="/about">
+          About
+        </a>
+      </div>
+
+      <div class="navbar-end">
+          {{if signedIn }}
+            <div class="navbar-item has-dropdown is-hoverable">
+              <a class="navbar-link">
+{{/*                <figure class="image is-32x32 "><img src="{{.User.ProfileImageUrl}}" alt="{{.User.Name}}" width="32" height="32" class=""></figure>&nbsp;*/}}
+                {{.User.Name}}
+              </a>
+              <div class="navbar-dropdown" href="/books">
+                <a class="navbar-item">
+                  Profile
+                </a>
+                <hr class="navbar-divider">
+                <a class="navbar-item" href="#" onclick="submit()">
+                  Sign out
+                </a>
+                <form method="POST" action="/sign_out" id="signOutForm">
+                  <input class="btn btn-outline-primary" type="submit" hidden/>
+                </form>
+              </div>
+            </div>
+          {{else}}
+            <div class="navbar-item">
+              <div class="buttons">
+                <a class="button is-light" href="/sign_in">
+                  Sign In
+                </a>
+              </div>
+            </div>
+          {{ end }}
       </div>
     </div>
-    <script type="application/javascript">
-        function submit() {
-            document.getElementById("signOutForm").submit();
-        }
-    </script>
   </nav>
+  <script type="application/javascript">
+      function submit() {
+          document.getElementById("signOutForm").submit();
+      }
+  </script>
 {{end}}

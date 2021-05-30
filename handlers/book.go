@@ -33,9 +33,9 @@ type BookHandler struct {
 }
 
 func NewBookHandler(as *models.AuthorService, ba *models.BookAuthorService, bs *models.BookService, ub *models.UserBookService) *BookHandler {
-	listView := views.NewView("bootstrap", "templates/books.gohtml")
-	addView := views.NewView("bootstrap", "templates/book_add.gohtml")
-	editView := views.NewView("bootstrap", "templates/book_edit.gohtml")
+	listView := views.NewView("bulma", "templates/books.gohtml")
+	addView := views.NewView("bulma", "templates/book_add.gohtml")
+	editView := views.NewView("bulma", "templates/book_edit.gohtml")
 
 	decoder.IgnoreUnknownKeys(true)
 
@@ -182,7 +182,7 @@ func (h *BookHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not mark book as read", http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, "/books", http.StatusFound)
+	http.Redirect(w, r, fmt.Sprintf("/books/%d", bookId), http.StatusFound)
 }
 
 func (h *BookHandler) HandleDelete(w http.ResponseWriter, r *http.Request) {

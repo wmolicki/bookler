@@ -4,28 +4,28 @@
     <form method="post">
       {{ csrfField }}
 
-      <div class="mb-3">
-        <label class="form-label">Name</label>
+      <div class="field">
+        <label class="label">Name</label>
         <div class="control">
-          <input name="name" class="form-control" type="text">
+          <input name="name" class="input" type="text">
         </div>
       </div>
 
-      <div class="mb-3">
-        <label class="form-label">Description</label>
+      <div class="field">
+        <label class="label">Description</label>
         <div class="control">
-          <input name="description" class="form-control" type="text">
+          <input name="description" class="input" type="text">
         </div>
       </div>
 
-      <div class="mb-3">
-        <label class="form-label">Authors</label>
+      <div class="field">
+        <label class="label">Authors</label>
         <div class="control">
-          <input name="authors" class="form-control" type="text"
+          <input name="authors" class="input" type="text"
                  placeholder="separate by comma to add multiple">
         </div>
       </div>
 
-      <button type="submit" class="btn btn-primary">Submit</button>
+      <button type="submit" class="button is-primary is-outlined">Submit</button>
     </form>
 {{end}}

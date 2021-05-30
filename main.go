@@ -69,7 +69,8 @@ func main() {
 	r.HandleFunc("/books/{bookId:[0-9]+}/delete", b.HandleDelete).Methods(http.MethodPost)
 
 	r.HandleFunc("/authors", a.List).Methods(http.MethodGet)
-	r.HandleFunc("/authors/{authorId:[0-9]+}", a.Details).Methods(http.MethodGet)
+	r.HandleFunc("/authors/{authorId:[0-9]+}", a.Edit).Methods(http.MethodGet)
+	r.HandleFunc("/authors/{authorId:[0-9]+}", a.HandleEdit).Methods(http.MethodPost)
 	r.HandleFunc("/authors/{authorId:[0-9]+}/delete", a.Delete).Methods(http.MethodPost)
 
 	oh := handlers.NewOauthHandler(services.OauthConfig, services.User)

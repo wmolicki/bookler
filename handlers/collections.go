@@ -13,9 +13,9 @@ import (
 )
 
 func NewCollectionsHandler(us *models.UserService, bs *models.BookService, cs *models.CollectionsService) *CollectionsHandler {
-	listView := views.NewView("bootstrap", "templates/collections.gohtml")
-	editView := views.NewView("bootstrap", "templates/collection_edit.gohtml")
-	addView := views.NewView("bootstrap", "templates/collection_add.gohtml")
+	listView := views.NewView("bulma", "templates/collections.gohtml")
+	editView := views.NewView("bulma", "templates/collection_edit.gohtml")
+	addView := views.NewView("bulma", "templates/collection_add.gohtml")
 
 	bs.DestructiveReset()
 	return &CollectionsHandler{bs, us, cs, listView, addView, editView}
@@ -259,7 +259,7 @@ func (ch *CollectionsHandler) HandleEdit(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	http.Redirect(w, r, "/collections", http.StatusFound)
+	http.Redirect(w, r, fmt.Sprintf("/collections/%d", collectionId), http.StatusFound)
 	return
 }
 

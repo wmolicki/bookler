@@ -8,7 +8,7 @@ import (
 )
 
 func NewUserHandler(us *models.UserService) *UserHandler {
-	signInView := views.NewView("bootstrap", "templates/sign_in.gohtml")
+	signInView := views.NewView("bulma", "templates/sign_in.gohtml")
 
 	return &UserHandler{us: us, signIn: signInView}
 }

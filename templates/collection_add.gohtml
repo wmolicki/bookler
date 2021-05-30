@@ -1,16 +1,16 @@
 {{define "yield"}}
-<h1>Add Collection</h1>
+<h1 class="title">Add Collection</h1>
 <form method="post">
     {{ csrfField }}
 
-  <div class="mb-3">
-    <label class="form-label">Name</label>
+  <div class="field">
+    <label class="label">Name</label>
     <div class="control">
-      <input name="name" class="form-control" type="text" value="">
+      <input name="name" class="input" type="text" value="">
     </div>
   </div>
 
-  <button type="submit" class="btn btn-outline-primary">Submit</button>
+  <button type="submit" class="button is-primary is-outlined">Submit</button>
 
 </form>
 {{end}}
