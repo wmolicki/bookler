@@ -15,7 +15,16 @@ import (
 )
 
 func main() {
-	r := getRouter()
+	mx := mux.NewRouter()
+	addGlobalMiddlewares(mx)
+
+	staticRouter := mx.PathPrefix("/static").Subrouter()
+	r := mx.PathPrefix("/").Subrouter()
+	addDynamicMiddlewares(r)
+
+	staticHandler := http.FileServer(http.Dir("./static"))
+	staticHandler = http.StripPrefix("/static/", staticHandler)
+	staticRouter.PathPrefix("/").Handler(staticHandler)
 
 	services, err := models.NewServices(
 		models.WithDB("sqlite3", "./books_v2.db"),
@@ -74,24 +83,21 @@ func main() {
 	r.HandleFunc("/api/v/books", b.AddBook).Methods(http.MethodPost)
 	r.HandleFunc("/api/v1/books/{bookId:[0-9]+}", b.UpdateBook).Methods(http.MethodPatch)
 
-	staticHandler := http.FileServer(http.Dir("./static"))
-	staticHandler = http.StripPrefix("/static/", staticHandler)
-	r.PathPrefix("/static").Handler(staticHandler)
-
-	err = http.ListenAndServe(":3333", r)
+	err = http.ListenAndServe(":3333", mx)
 	if err != nil {
 		log.Fatalf("cannot serve: %v", err)
 	}
 }
 
-func getRouter() *mux.Router {
-	r := mux.NewRouter()
+func addGlobalMiddlewares(r *mux.Router) {
 	r.Use(chiMw.Logger)
 	r.Use(chiMw.Recoverer)
+}
+
+func addDynamicMiddlewares(r *mux.Router) {
 	r.Use(chiMw.NoCache)
 
 	// TODO: turn this on
 	//CSRF := csrf.Protect([]byte("secret-csrf-auth-key-should-be-32-bytes"), csrf.Secure(false))
 	//r.Use(CSRF)
-	return r
 }
