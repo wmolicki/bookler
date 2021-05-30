@@ -1,3 +1,4 @@
+{{- /*gotype: github.com/wmolicki/bookler/views.Data*/ -}}
 {{define "bulma"}}
   <!DOCTYPE html>
   <html lang="en">
@@ -16,6 +17,7 @@
   <div id="wrapper">
       <div class="container">
       {{template "navbar" .}}
+          {{ template "message" .Message}}
       {{ template "yield" .Stuff}}
       </div>
   </div>

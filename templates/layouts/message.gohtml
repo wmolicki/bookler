@@ -1,0 +1,16 @@
+{{- /*gotype: github.com/wmolicki/bookler/views.Message*/ -}}
+{{ define "message"}}
+  {{ if . }}
+    <article id="alert-box" class="message is-{{.Level}}">
+      <div class="message-body">
+        {{.Text}}
+      </div>
+    </article>
+      <script type="application/javascript">
+          console.log("yep")
+          setTimeout(function () {
+              document.getElementById('alert-box').style.display='none';
+          }, 5000);
+      </script>
+  {{end}}
+{{end}}

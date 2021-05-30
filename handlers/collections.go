@@ -61,6 +61,7 @@ func (ch *CollectionsHandler) HandleAdd(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	views.FlashSuccess(w, "Collection created successfully.")
 	http.Redirect(w, r, "/collections", http.StatusFound)
 	return
 }
@@ -107,6 +108,7 @@ func (ch *CollectionsHandler) HandleAddBook(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	views.FlashSuccess(w, "Book added to collection.")
 	http.Redirect(w, r, fmt.Sprintf("/collections/%d", c.ID), http.StatusFound)
 	return
 }
@@ -132,6 +134,7 @@ func (ch *CollectionsHandler) HandleDelete(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	views.FlashSuccess(w, "Collection deleted successfully.")
 	http.Redirect(w, r, "/collections", http.StatusFound)
 	return
 }
@@ -170,6 +173,7 @@ func (ch *CollectionsHandler) HandleBookDelete(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	views.FlashSuccess(w, "Book removed from collection.")
 	http.Redirect(w, r, fmt.Sprintf("/collections/%d", collectionId), http.StatusFound)
 	return
 }
@@ -259,6 +263,7 @@ func (ch *CollectionsHandler) HandleEdit(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	views.FlashSuccess(w, "Collection edited successfully.")
 	http.Redirect(w, r, fmt.Sprintf("/collections/%d", collectionId), http.StatusFound)
 	return
 }

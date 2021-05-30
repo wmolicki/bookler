@@ -182,6 +182,8 @@ func (h *BookHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not mark book as read", http.StatusInternalServerError)
 		return
 	}
+
+	views.FlashSuccess(w, "Book edited successfully.")
 	http.Redirect(w, r, fmt.Sprintf("/books/%d", bookId), http.StatusFound)
 }
 
@@ -207,6 +209,7 @@ func (h *BookHandler) HandleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	views.FlashSuccess(w, "Book deleted successfully.")
 	http.Redirect(w, r, "/books", http.StatusFound)
 }
 
@@ -224,7 +227,7 @@ type EditBookFormData struct {
 	ID          uint   `schema:"id,required"`
 	Name        string `schema:"name,required"`
 	Authors     string `schema:"authors,required"`
-	Description string `schema:"description,required"`
+	Description string `schema:"description"`
 	Edition     string `schema:"edition"`
 	Rating      int    `schema:"rating"`
 	Read        bool   `schema:"read"`
@@ -264,6 +267,7 @@ func (h *BookHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	views.FlashSuccess(w, "Book added successfully.")
 	http.Redirect(w, r, fmt.Sprintf("/books/%d", book.ID), http.StatusFound)
 }
 

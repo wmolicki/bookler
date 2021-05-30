@@ -76,6 +76,7 @@ func (a *AuthorsHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	views.FlashSuccess(w, "Author edited successfully.")
 	http.Redirect(w, r, fmt.Sprintf("/authors/%d", author.ID), http.StatusFound)
 }
 
@@ -121,6 +122,7 @@ func (a *AuthorsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	views.FlashSuccess(w, "Author deleted successfully.")
 	http.Redirect(w, r, "/authors", http.StatusFound)
 	return
 }

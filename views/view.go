@@ -21,8 +21,9 @@ var (
 )
 
 type Data struct {
-	User  *models.User
-	Stuff interface{}
+	User    *models.User
+	Message *Message
+	Stuff   interface{}
 }
 
 func NewView(layout string, files ...string) *View {
@@ -66,6 +67,12 @@ func (v *View) Render(w http.ResponseWriter, r *http.Request, data interface{}) 
 	})
 
 	vd := Data{User: user, Stuff: data}
+
+	if message := GetMessage(w, r); message != nil {
+		vd.Message = message
+		ClearCookies(w)
+	}
+
 	if err := tpl.ExecuteTemplate(&buf, v.Layout, vd); err != nil {
 		log.Println(err)
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
