@@ -52,14 +52,15 @@ func main() {
 	u := handlers.NewUserHandler(services.User)
 	c := handlers.NewCollectionsHandler(services.User, services.Book, services.Collections)
 
-	r.HandleFunc("/collections", c.List).Methods(http.MethodGet)
-	r.HandleFunc("/collections/add", c.Add).Methods(http.MethodGet)
-	r.HandleFunc("/collections/add", c.HandleAdd).Methods(http.MethodPost)
-	r.HandleFunc("/collections/{collectionId:[0-9]+}/delete", c.HandleDelete).Methods(http.MethodPost)
-	r.HandleFunc("/collections/{collectionId:[0-9]+}/book/add", c.HandleAddBook).Methods(http.MethodPost)
-	r.HandleFunc("/collections/{collectionId:[0-9]+}", c.Edit).Methods(http.MethodGet)
-	r.HandleFunc("/collections/{collectionId:[0-9]+}", c.HandleEdit).Methods(http.MethodPost)
-	r.HandleFunc("/collections/{collectionId:[0-9]+}/book/{bookId:[0-9]+}/delete", c.HandleBookDelete).Methods(http.MethodPost)
+	r.HandleFunc("/collections", middleware.SignedInRequired(c.List)).Methods(http.MethodGet)
+	r.HandleFunc("/collections/add", middleware.SignedInRequired(c.Add)).Methods(http.MethodGet)
+	r.HandleFunc("/collections/add", middleware.SignedInRequired(c.HandleAdd)).Methods(http.MethodPost)
+	r.HandleFunc("/collections/{collectionId:[0-9]+}/delete", middleware.SignedInRequired(c.HandleDelete)).Methods(http.MethodPost)
+	r.HandleFunc("/collections/{collectionId:[0-9]+}/book/add", middleware.SignedInRequired(c.HandleAddBook)).Methods(http.MethodPost)
+	r.HandleFunc("/collections/{collectionId:[0-9]+}", middleware.SignedInRequired(c.Edit)).Methods(http.MethodGet)
+	r.HandleFunc("/collections/{collectionId:[0-9]+}", middleware.SignedInRequired(c.HandleEdit)).Methods(http.MethodPost)
+	r.HandleFunc("/collections/{collectionId:[0-9]+}/book/{bookId:[0-9]+}/delete",
+		middleware.SignedInRequired(c.HandleBookDelete)).Methods(http.MethodPost)
 
 	r.HandleFunc("/books", b.List).Methods(http.MethodGet)
 	r.HandleFunc("/books/add", b.Add).Methods(http.MethodGet)

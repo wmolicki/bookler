@@ -37,3 +37,14 @@ func (um *UserMiddleware) AddUser(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(fn)
 }
+
+func SignedInRequired(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		u := context.User(r.Context())
+		if u == nil {
+			http.Error(w, "unauthorized", http.StatusForbidden)
+			return
+		}
+		next(w, r)
+	}
+}
