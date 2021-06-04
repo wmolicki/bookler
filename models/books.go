@@ -16,6 +16,7 @@ type Book struct {
 	Name        string
 	Edition     string
 	Description string
+	Image       string `db:"img"`
 
 	Tags    []string
 	Authors []*BookAuthor
@@ -75,8 +76,10 @@ func (bd *bookDB) Create(book *Book) error {
 }
 
 func (bd *bookDB) Update(book *Book) error {
-	query := `UPDATE books SET name = ?, edition = ?, description = ?, updated_at = ? WHERE id = ?`
-	_, err := bd.db.Exec(query, book.Name, book.Edition, book.Description, book.UpdatedAt, book.ID)
+	query := `UPDATE books SET name = ?, edition = ?, description = ?, updated_at = ?, tags = ?, img = ? WHERE id = ?`
+	tags := strings.Join(book.Tags, ",")
+
+	_, err := bd.db.Exec(query, book.Name, book.Edition, book.Description, book.UpdatedAt, tags, book.Image, book.ID)
 	if err != nil {
 		return fmt.Errorf("could not update book: %v", err)
 	}
@@ -109,7 +112,7 @@ func (bd *bookDB) ByID(id uint) (*Book, error) {
 		Book
 	}
 
-	query := "SELECT id, created_at, updated_at, name, edition, description, tags FROM books WHERE id = ?;"
+	query := "SELECT id, created_at, updated_at, name, edition, description, tags, img FROM books WHERE id = ?;"
 	row := bd.db.QueryRowx(query, id)
 
 	if err := first(&queryModel, row); err != nil {

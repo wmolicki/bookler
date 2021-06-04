@@ -1,9 +1,14 @@
 package handlers
 
 import (
+	"crypto/md5"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -17,6 +22,8 @@ import (
 	"github.com/wmolicki/bookler/models"
 	"github.com/wmolicki/bookler/views"
 )
+
+const maxMultiPartMemory = 5 * 1 << 20 // 5 MB
 
 var validate *validator.Validate
 var decoder = schema.NewDecoder()
@@ -85,16 +92,26 @@ func (h *BookHandler) Details(w http.ResponseWriter, r *http.Request) {
 
 	viewModel := struct {
 		EditBookFormData
-		Ratings []int
+		Name        string
+		Authors     string
+		Description string
+		ID          uint
+		Tags        []string
+		Image       string
+		Ratings     []int
 	}{
-		Ratings: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-		EditBookFormData: EditBookFormData{
-			Name:        book.Name,
-			Authors:     authors,
-			Description: book.Description,
-			ID:          book.ID,
-			Tags:        book.Tags,
-		}}
+		Ratings:     []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+		Name:        book.Name,
+		Authors:     authors,
+		Description: book.Description,
+		ID:          book.ID,
+		Tags:        book.Tags,
+		Image:       book.Image,
+	}
+
+	if viewModel.Image == "" {
+		viewModel.Image = "320x480.png"
+	}
 
 	user := context.User(r.Context())
 	if user != nil {
@@ -148,16 +165,21 @@ func (h *BookHandler) Edit(w http.ResponseWriter, r *http.Request) {
 
 	viewModel := struct {
 		EditBookFormData
-		Ratings []int
+		Name        string
+		Authors     string
+		Description string
+		ID          uint
+		Tags        string
+		Image       string
+		Ratings     []int
 	}{
-		Ratings: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-		EditBookFormData: EditBookFormData{
-			Name:        book.Name,
-			Authors:     authors,
-			Description: book.Description,
-			ID:          book.ID,
-			Tags:        book.Tags,
-		}}
+		Ratings:     []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+		Name:        book.Name,
+		Authors:     authors,
+		Description: book.Description,
+		ID:          book.ID,
+		Tags:        strings.Join(book.Tags, ","),
+	}
 
 	user := context.User(r.Context())
 	if user != nil {
@@ -208,10 +230,41 @@ func (h *BookHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
 		panic("signed in only!")
 	}
 
-	err = r.ParseForm()
+	err = r.ParseMultipartForm(maxMultiPartMemory)
 	if err != nil {
 		badRequest(w, err.Error())
 	}
+
+	formF, fh, err := r.FormFile("book-img")
+	if err == http.ErrMissingFile {
+		// do nothing
+	} else if err != nil {
+		log.Errorf("error getting file from form: %v", err)
+		http.Error(w, "error processing the form", http.StatusInternalServerError)
+		return
+	} else {
+		defer formF.Close()
+		ext := ""
+		if strings.Contains(fh.Filename, ".") {
+			ext = filepath.Ext(fh.Filename)
+		}
+
+		hasher := md5.New()
+		io.WriteString(hasher, fh.Filename)
+		hashed := base64.URLEncoding.EncodeToString(hasher.Sum(nil)) + ext
+		book.Image = hashed
+
+		dstF, err := os.Create("./static/upload/" + hashed)
+		defer dstF.Close()
+		helpers.Must(err)
+		_, err = io.Copy(dstF, formF)
+		if err != nil {
+			log.Errorf("error writing file to disk: %v", err)
+			http.Error(w, "error processing the form", http.StatusInternalServerError)
+			return
+		}
+	}
+
 	var data EditBookFormData
 	err = decoder.Decode(&data, r.PostForm)
 	if err != nil {
@@ -221,6 +274,7 @@ func (h *BookHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
 	book.Name = data.Name
 	book.Description = data.Description
 	book.Edition = data.Edition
+	book.Tags = helpers.CommaSplit(data.Tags)
 
 	err = h.bs.Update(book)
 	if err != nil {
@@ -290,14 +344,15 @@ type AddBookFormData struct {
 }
 
 type EditBookFormData struct {
-	ID          uint     `schema:"id,required"`
-	Name        string   `schema:"name,required"`
-	Authors     string   `schema:"authors,required"`
-	Description string   `schema:"description"`
-	Edition     string   `schema:"edition"`
-	Rating      int      `schema:"rating"`
-	Read        bool     `schema:"read"`
-	Tags        []string `schema:"tags"`
+	ID          uint   `schema:"id,required"`
+	Name        string `schema:"name,required"`
+	Authors     string `schema:"authors,required"`
+	Description string `schema:"description"`
+	Edition     string `schema:"edition"`
+	Rating      int    `schema:"rating"`
+	Read        bool   `schema:"read"`
+	Tags        string `schema:"tags"`
+	Image       string `schema:"img"`
 }
 
 func splitAuthors(authors string) []string {

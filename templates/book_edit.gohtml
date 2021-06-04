@@ -2,8 +2,8 @@
 {{ define "yield"}}
   <h1 class="title">Book "{{ .Name }}"</h1>
 
-  <form method="post">
-      {{ csrfField }}
+  <form method="post" enctype="multipart/form-data">
+    {{ csrfField }}
 
     <input name="id" class="hidden" hidden type="text" value="{{.ID}}">
 
@@ -25,6 +25,13 @@
       <label class="label">Authors</label>
       <div class="control">
         <input name="authors" class="input" type="text" value="{{.Authors}}">
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label">Tags</label>
+      <div class="control">
+        <input name="tags" class="input" type="text" value="{{.Tags}}">
       </div>
     </div>
 
@@ -52,14 +59,34 @@
       </div>
     </div>
 
-    <div id="app">
-
+    <div id="book-file-upl" class="file block has-name">
+      <label class="file-label">
+        <input class="file-input" type="file" name="book-img">
+        <span class="file-cta">
+        <span class="file-icon">
+          <i class="fas fa-upload"></i>
+        </span>
+        <span class="file-label">
+          Choose a file…
+        </span>
+        </span>
+        <span class="file-name">
+          No file uploaded
+        </span>
+      </label>
     </div>
 
-    <button type="submit" class="button is-primary is-outlined">Edit</button>
-    <button type="submit" formaction="/books/{{.ID}}/delete" class="button is-danger is-outlined">Delete</button>
-  </form>
 
+    <div class="block buttons">
+      <button type="submit" class="button is-info is-outlined">Save</button>
+      <a href="/books/{{.ID}}" class="button is-primary is-outlined">Cancel</a>
+      <button type="submit" formaction="/books/{{.ID}}/delete" class="button is-danger is-outlined">Delete</button>
+    </div>
+
+  </form>
+  <div id="app">
+
+  </div>
   <script src="https://unpkg.com/vue"></script>
   <script src="https://unpkg.com/buefy/dist/buefy.min.js"></script>
 
@@ -67,6 +94,15 @@
       new Vue({
           el: '#app'
       })
+
+      const fileInput = document.querySelector('#book-file-upl input[type=file]');
+      fileInput.onchange = () => {
+          if (fileInput.files.length > 0) {
+              const fileName = document.querySelector('#book-file-upl .file-name');
+              fileName.textContent = fileInput.files[0].name;
+          }
+      }
   </script>
+
 {{end}}
 
