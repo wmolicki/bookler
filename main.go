@@ -65,8 +65,9 @@ func main() {
 	r.HandleFunc("/books", b.List).Methods(http.MethodGet)
 	r.HandleFunc("/books/add", b.Add).Methods(http.MethodGet)
 	r.HandleFunc("/books/add", b.HandleAdd).Methods(http.MethodPost)
-	r.HandleFunc("/books/{bookId:[0-9]+}", b.Edit).Methods(http.MethodGet)
-	r.HandleFunc("/books/{bookId:[0-9]+}", b.HandleEdit).Methods(http.MethodPost)
+	r.HandleFunc("/books/{bookId:[0-9]+}", b.Details).Methods(http.MethodGet)
+	r.HandleFunc("/books/{bookId:[0-9]+}/edit", b.Edit).Methods(http.MethodGet)
+	r.HandleFunc("/books/{bookId:[0-9]+}/edit", b.HandleEdit).Methods(http.MethodPost)
 	r.HandleFunc("/books/{bookId:[0-9]+}/delete", b.HandleDelete).Methods(http.MethodPost)
 
 	r.HandleFunc("/authors", a.List).Methods(http.MethodGet)

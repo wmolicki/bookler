@@ -12,17 +12,17 @@ import (
 	"github.com/wmolicki/bookler/views"
 )
 
-func NewCollectionsHandler(us *models.UserService, bs *models.BookService, cs *models.CollectionsService) *CollectionsHandler {
+func NewCollectionsHandler(us *models.UserService, bs models.BookService, cs *models.CollectionsService) *CollectionsHandler {
 	listView := views.NewView("bulma", "templates/collections.gohtml")
 	editView := views.NewView("bulma", "templates/collection_edit.gohtml")
 	addView := views.NewView("bulma", "templates/collection_add.gohtml")
 
-	bs.DestructiveReset()
+	// bs.DestructiveReset()
 	return &CollectionsHandler{bs, us, cs, listView, addView, editView}
 }
 
 type CollectionsHandler struct {
-	bs *models.BookService
+	bs models.BookService
 	us *models.UserService
 	cs *models.CollectionsService
 
@@ -94,7 +94,7 @@ func (ch *CollectionsHandler) HandleAddBook(w http.ResponseWriter, r *http.Reque
 		panic(err)
 	}
 
-	book, err := ch.bs.GetBookByName(addBookFormData.Name)
+	book, err := ch.bs.ByName(addBookFormData.Name)
 	if err != nil {
 		log.Errorf("could not find book by name: %v", err)
 		http.Error(w, "could not find book by name", http.StatusInternalServerError)
@@ -159,7 +159,7 @@ func (ch *CollectionsHandler) HandleBookDelete(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	b, err := ch.bs.GetBookByID(bookId)
+	b, err := ch.bs.ByID(bookId)
 	if err != nil {
 		log.Errorf("error getting book: %v", err)
 		http.Error(w, "could not get book", http.StatusInternalServerError)
@@ -197,7 +197,7 @@ func (ch *CollectionsHandler) Edit(w http.ResponseWriter, r *http.Request) {
 		inCollection[b.Name] = true
 	}
 
-	books, err := ch.bs.GetList()
+	books, err := ch.bs.List()
 	if err != nil {
 		log.Errorf("could not get books: %v", err)
 		http.Error(w, "could not get books", http.StatusInternalServerError)

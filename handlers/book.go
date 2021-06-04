@@ -22,25 +22,27 @@ var validate *validator.Validate
 var decoder = schema.NewDecoder()
 
 type BookHandler struct {
-	bs *models.BookService
+	bs models.BookService
 	ba *models.BookAuthorService
 	as *models.AuthorService
 	ub *models.UserBookService
 
-	listView *views.View
-	addView  *views.View
-	editView *views.View
+	listView    *views.View
+	addView     *views.View
+	editView    *views.View
+	detailsView *views.View
 }
 
-func NewBookHandler(as *models.AuthorService, ba *models.BookAuthorService, bs *models.BookService, ub *models.UserBookService) *BookHandler {
+func NewBookHandler(as *models.AuthorService, ba *models.BookAuthorService, bs models.BookService, ub *models.UserBookService) *BookHandler {
 	listView := views.NewView("bulma", "templates/books.gohtml")
 	addView := views.NewView("bulma", "templates/book_add.gohtml")
 	editView := views.NewView("bulma", "templates/book_edit.gohtml")
+	detailsView := views.NewView("bulma", "templates/book_details.gohtml")
 
 	decoder.IgnoreUnknownKeys(true)
 
-	bs.DestructiveReset()
-	return &BookHandler{bs, ba, as, ub, listView, addView, editView}
+	// bs.DestructiveReset()
+	return &BookHandler{bs, ba, as, ub, listView, addView, editView, detailsView}
 }
 
 type BooksViewModel struct {
@@ -52,12 +54,75 @@ type BookViewModel struct {
 }
 
 func (h *BookHandler) List(w http.ResponseWriter, r *http.Request) {
-	books, err := h.bs.GetList()
+	books, err := h.bs.List()
 	if err != nil {
 		internalServerError(w, fmt.Sprintf("could not load books: %v", err))
 		return
 	}
 	h.listView.Render(w, r, BooksViewModel{Books: books})
+}
+
+func (h *BookHandler) Details(w http.ResponseWriter, r *http.Request) {
+	bookId, err := helpers.ParseUintParam(r, "bookId")
+	if err != nil {
+		badRequest(w, fmt.Sprintf("could not convert param: %v", err))
+		return
+	}
+
+	book, err := h.ba.GetBookByID(bookId)
+	if err != nil {
+		// TODO: switch on error type
+		log.Errorf("error getting book: %v", err)
+		http.Error(w, "could not get book", http.StatusInternalServerError)
+		return
+	}
+
+	authorsSl := make([]string, 0, len(book.Authors))
+	for _, a := range book.Authors {
+		authorsSl = append(authorsSl, a.Name)
+	}
+	authors := strings.Join(authorsSl, ", ")
+
+	viewModel := struct {
+		EditBookFormData
+		Ratings []int
+	}{
+		Ratings: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+		EditBookFormData: EditBookFormData{
+			Name:        book.Name,
+			Authors:     authors,
+			Description: book.Description,
+			ID:          book.ID,
+			Tags:        book.Tags,
+		}}
+
+	user := context.User(r.Context())
+	if user != nil {
+		userBook, err := h.ub.GetUserBook(book, user)
+
+		switch err {
+		case nil:
+			viewModel.Read = userBook.Read
+			var rating int
+			if userBook.Rating != nil {
+				rating = *userBook.Rating
+			} else {
+				rating = -1
+			}
+			viewModel.Rating = rating
+		case models.ErrorEntityNotFound:
+			// TODO: ugly hack for now (default (0) value should mean no rating, instead
+			// of having -1... maybe change no rating value to 0, and have minimal rating as 1/10
+			viewModel.Rating = -1
+		default:
+			log.Errorf("could not load user book profile: %v", err)
+			internalServerError(w, "could not load user book profile")
+			return
+		}
+	}
+
+	h.detailsView.Render(w, r, &viewModel)
+	return
 }
 
 func (h *BookHandler) Edit(w http.ResponseWriter, r *http.Request) {
@@ -91,6 +156,7 @@ func (h *BookHandler) Edit(w http.ResponseWriter, r *http.Request) {
 			Authors:     authors,
 			Description: book.Description,
 			ID:          book.ID,
+			Tags:        book.Tags,
 		}}
 
 	user := context.User(r.Context())
@@ -129,7 +195,7 @@ func (h *BookHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	book, err := h.bs.GetBookByID(bookId)
+	book, err := h.bs.ByID(bookId)
 	if err != nil {
 		// TODO: switch on error type
 		log.Errorf("could not get book: %v", err)
@@ -156,7 +222,7 @@ func (h *BookHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
 	book.Description = data.Description
 	book.Edition = data.Edition
 
-	book, err = h.bs.Update(book)
+	err = h.bs.Update(book)
 	if err != nil {
 		log.Errorf("error updating book: %v", err)
 		http.Error(w, "error updating book", http.StatusInternalServerError)
@@ -194,7 +260,7 @@ func (h *BookHandler) HandleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	book, err := h.bs.GetBookByID(bookId)
+	book, err := h.bs.ByID(bookId)
 	if err != nil {
 		// TODO: switch on error type
 		log.Errorf("could not get book: %v", err)
@@ -224,13 +290,14 @@ type AddBookFormData struct {
 }
 
 type EditBookFormData struct {
-	ID          uint   `schema:"id,required"`
-	Name        string `schema:"name,required"`
-	Authors     string `schema:"authors,required"`
-	Description string `schema:"description"`
-	Edition     string `schema:"edition"`
-	Rating      int    `schema:"rating"`
-	Read        bool   `schema:"read"`
+	ID          uint     `schema:"id,required"`
+	Name        string   `schema:"name,required"`
+	Authors     string   `schema:"authors,required"`
+	Description string   `schema:"description"`
+	Edition     string   `schema:"edition"`
+	Rating      int      `schema:"rating"`
+	Read        bool     `schema:"read"`
+	Tags        []string `schema:"tags"`
 }
 
 func splitAuthors(authors string) []string {
@@ -272,7 +339,7 @@ func (h *BookHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *BookHandler) Index(w http.ResponseWriter, r *http.Request) {
-	books, err := h.bs.GetList()
+	books, err := h.bs.List()
 	if err != nil {
 		log.Errorf("could not load books: %v", err)
 		internalServerError(w, "could not load books")
@@ -357,7 +424,7 @@ func (h *BookHandler) UpdateBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	book, err := h.bs.GetBookByID(bookId)
+	book, err := h.bs.ByID(bookId)
 	if err != nil {
 		notFound(w, fmt.Sprintf("could not get book by id: %v", err))
 		return
@@ -373,7 +440,7 @@ func (h *BookHandler) UpdateBook(w http.ResponseWriter, r *http.Request) {
 	book.Edition = data.Edition
 	book.Description = data.Description
 
-	_, err = h.bs.Update(book)
+	err = h.bs.Update(book)
 	if err != nil {
 		internalServerError(w, fmt.Sprintf("could not update book: %v", err))
 		return

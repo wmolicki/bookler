@@ -18,7 +18,7 @@ func NewServices(configs ...ServicesConfig) (*Services, error) {
 }
 
 type Services struct {
-	Book        *BookService
+	Book        BookService
 	Author      *AuthorService
 	BookAuthor  *BookAuthorService
 	User        *UserService

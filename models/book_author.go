@@ -15,7 +15,7 @@ type BookAuthor struct {
 type BookAuthorService struct {
 	db *sqlx.DB
 	as *AuthorService
-	bs *BookService
+	bs BookService
 }
 
 type AuthorWithBookCount struct {
@@ -23,12 +23,12 @@ type AuthorWithBookCount struct {
 	BookCount int `db:"book_count"`
 }
 
-func NewBookAuthorService(db *sqlx.DB, as *AuthorService, bs *BookService) *BookAuthorService {
+func NewBookAuthorService(db *sqlx.DB, as *AuthorService, bs BookService) *BookAuthorService {
 	return &BookAuthorService{db: db, bs: bs, as: as}
 }
 
 func (ba *BookAuthorService) GetBookByID(bookID uint) (*Book, error) {
-	book, err := ba.bs.GetBookByID(bookID)
+	book, err := ba.bs.ByID(bookID)
 	if err != nil {
 		return nil, err
 	}

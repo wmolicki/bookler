@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -15,59 +16,76 @@ type Book struct {
 	Name        string
 	Edition     string
 	Description string
-	Authors     []*BookAuthor
+
+	Tags    []string
+	Authors []*BookAuthor
 }
 
-type BookService struct {
-	db *sqlx.DB
+type BookRepo interface {
+	ByID(uint) (*Book, error)
+	ByName(string) (*Book, error)
+	List() ([]*Book, error)
+
+	Create(*Book) error
+	Update(*Book) error
+	Delete(*Book) error
 }
 
-func NewBookService(db *sqlx.DB) *BookService {
-	return &BookService{db: db}
+type BookService interface {
+	BookRepo
+	New(name, description, edition string, authors []string) (*Book, error)
 }
 
-func (bs *BookService) New(name, description, edition string, authors []string) (*Book, error) {
+type bookService struct {
+	BookRepo
+}
+
+func NewBookService(db *sqlx.DB) BookService {
+	bd := &bookDB{db}
+	return &bookService{bd}
+}
+
+func (bs *bookService) New(name, description, edition string, authors []string) (*Book, error) {
 	b := Book{Name: name, Description: description, Edition: edition}
-	book, err := bs.insert(&b)
+	err := bs.Create(&b)
 
 	if err != nil {
 		return nil, fmt.Errorf("error happened during creating book: %v", err)
 	}
 
-	return book, nil
+	return &b, nil
 }
 
-func (bs *BookService) insert(book *Book) (*Book, error) {
+type bookDB struct {
+	db *sqlx.DB
+}
+
+func (bd *bookDB) Create(book *Book) error {
 	query := "INSERT INTO books (name, edition, description) VALUES (?, ?, ?)"
-	result, err := bs.db.Exec(query, book.Name, book.Edition, book.Description)
+	result, err := bd.db.Exec(query, book.Name, book.Edition, book.Description)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	bookId, err := result.LastInsertId()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	id := uint(bookId)
-	insertedBook, err := bs.GetBookByID(id)
-	return insertedBook, err
+	book.ID = uint(bookId)
+	return nil
 }
 
-func (bs *BookService) Update(book *Book) (*Book, error) {
+func (bd *bookDB) Update(book *Book) error {
 	query := `UPDATE books SET name = ?, edition = ?, description = ?, updated_at = ? WHERE id = ?`
-	_, err := bs.db.Exec(query, book.Name, book.Edition, book.Description, book.UpdatedAt, book.ID)
+	_, err := bd.db.Exec(query, book.Name, book.Edition, book.Description, book.UpdatedAt, book.ID)
 	if err != nil {
-		return nil, fmt.Errorf("could not update book: %v", err)
+		return fmt.Errorf("could not update book: %v", err)
 	}
-	book, err = bs.GetBookByID(book.ID)
-	if err != nil {
-		return nil, fmt.Errorf("could not get book: %v", err)
-	}
-	return book, nil
+	return nil
 }
 
-func (bs *BookService) Delete(book *Book) error {
+func (bd *bookDB) Delete(book *Book) error {
 	ctx := context.Background()
-	tx, err := bs.db.BeginTx(ctx, nil)
+	tx, err := bd.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -77,30 +95,38 @@ func (bs *BookService) Delete(book *Book) error {
 	query3 := `DELETE FROM user_book WHERE book_id = ?`
 	query4 := `DELETE FROM books WHERE id = ?`
 
-	bs.db.Exec(query1, book.ID)
-	bs.db.Exec(query2, book.ID)
-	bs.db.Exec(query3, book.ID)
-	bs.db.Exec(query4, book.ID)
+	bd.db.Exec(query1, book.ID)
+	bd.db.Exec(query2, book.ID)
+	bd.db.Exec(query3, book.ID)
+	bd.db.Exec(query4, book.ID)
 
 	return tx.Commit()
 }
 
-func (bs *BookService) GetBookByID(id uint) (*Book, error) {
-	var book Book
-	query := "SELECT id, created_at, updated_at, name, edition, description FROM books WHERE id = ?;"
-	row := bs.db.QueryRowx(query, id)
+func (bd *bookDB) ByID(id uint) (*Book, error) {
+	var queryModel struct {
+		RawTags string `db:"tags"`
+		Book
+	}
 
-	if err := first(&book, row); err != nil {
+	query := "SELECT id, created_at, updated_at, name, edition, description, tags FROM books WHERE id = ?;"
+	row := bd.db.QueryRowx(query, id)
+
+	if err := first(&queryModel, row); err != nil {
 		return nil, err
 	}
 
-	return &book, nil
+	if queryModel.RawTags != "" {
+		queryModel.Book.Tags = strings.Split(queryModel.RawTags, ",")
+	}
+
+	return &queryModel.Book, nil
 }
 
-func (bs *BookService) GetBookByName(name string) (*Book, error) {
+func (bd *bookDB) ByName(name string) (*Book, error) {
 	var book Book
 	query := "SELECT id, created_at, updated_at, name, edition, description FROM books WHERE name = ?;"
-	row := bs.db.QueryRowx(query, name)
+	row := bd.db.QueryRowx(query, name)
 
 	if err := first(&book, row); err != nil {
 		return nil, err
@@ -109,12 +135,12 @@ func (bs *BookService) GetBookByName(name string) (*Book, error) {
 	return &book, nil
 }
 
-func (bs *BookService) GetList() ([]*Book, error) {
+func (bd *bookDB) List() ([]*Book, error) {
 	var books []*Book
 
 	query := "SELECT id, created_at, updated_at, name, edition, description FROM books;"
 
-	err := bs.db.Select(&books, query)
+	err := bd.db.Select(&books, query)
 
 	if err != nil {
 		return nil, err
@@ -122,6 +148,6 @@ func (bs *BookService) GetList() ([]*Book, error) {
 	return books, nil
 }
 
-func (bs *BookService) DestructiveReset() {
+func (bd *bookDB) DestructiveReset() {
 	// as.db.Exec("DROP TABLE books")
 }
