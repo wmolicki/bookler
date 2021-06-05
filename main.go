@@ -83,7 +83,7 @@ func main() {
 	r.HandleFunc("/sign_out", oh.SignOut).Methods(http.MethodPost)
 
 	r.HandleFunc("/api/v1/books", b.Index).Methods(http.MethodGet)
-	r.HandleFunc("/api/v/books", b.AddBook).Methods(http.MethodPost)
+	r.HandleFunc("/api/v1/books", b.AddBook).Methods(http.MethodPost)
 	r.HandleFunc("/api/v1/books/{bookId:[0-9]+}", b.UpdateBook).Methods(http.MethodPatch)
 
 	err = http.ListenAndServe(":3333", mx)

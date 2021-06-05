@@ -1,14 +1,10 @@
 package handlers
 
 import (
-	"crypto/md5"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
-	"path/filepath"
+	"path"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -243,21 +239,8 @@ func (h *BookHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error processing the form", http.StatusInternalServerError)
 		return
 	} else {
-		defer formF.Close()
-		ext := ""
-		if strings.Contains(fh.Filename, ".") {
-			ext = filepath.Ext(fh.Filename)
-		}
-
-		hasher := md5.New()
-		io.WriteString(hasher, fh.Filename)
-		hashed := base64.URLEncoding.EncodeToString(hasher.Sum(nil)) + ext
+		hashed, err := helpers.StoreFile(fh.Filename, formF)
 		book.Image = hashed
-
-		dstF, err := os.Create("./static/upload/" + hashed)
-		defer dstF.Close()
-		helpers.Must(err)
-		_, err = io.Copy(dstF, formF)
 		if err != nil {
 			log.Errorf("error writing file to disk: %v", err)
 			http.Error(w, "error processing the form", http.StatusInternalServerError)
@@ -341,6 +324,7 @@ type AddBookFormData struct {
 	Name        string `schema:"name,required"`
 	Authors     string `schema:"authors,required"`
 	Description string `schema:"description"`
+	Tags        string `schema:"tags"`
 }
 
 type EditBookFormData struct {
@@ -408,10 +392,10 @@ func (h *BookHandler) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 type addBookRequestBody struct {
-	Name        string   `validate:"required"`
-	Authors     []string `json:"authors" validate:"required"`
-	Edition     string   `validate:"required"`
-	Description string   `validate:"required"`
+	Name        string `validate:"required"`
+	Authors     string `json:"authors" validate:"required"`
+	Description string `validate:"required"`
+	ImageURL    string `json:"image_url" validate:"required"`
 }
 
 func readRequestData(r *http.Request) (*addBookRequestBody, error) {
@@ -431,22 +415,52 @@ func readRequestData(r *http.Request) (*addBookRequestBody, error) {
 }
 
 func (h *BookHandler) AddBook(w http.ResponseWriter, r *http.Request) {
-	// TODO: transaction ?
 	data, err := readRequestData(r)
 	if err != nil {
 		badRequest(w, fmt.Sprintf("error happened during reading request body: %v", err))
 		return
 	}
 
-	_, err = h.bs.New(data.Name, data.Description, data.Edition, data.Authors)
+	authors := splitAuthors(data.Authors)
+	book, err := h.bs.New(data.Name, data.Description, "", authors)
+	if err != nil {
+		handleCreateBookError(w, err)
+		return
+	}
+
+	resp, err := http.Get(data.ImageURL)
+	if err != nil {
+		handleCreateBookError(w, err)
+		return
+	}
+	defer resp.Body.Close()
+	filename := path.Base(data.ImageURL)
+	hashed, err := helpers.StoreFile(filename, resp.Body)
+	if err != nil {
+		handleCreateBookError(w, err)
+		return
+	}
+
+	book.Image = hashed
+	err = h.bs.Update(book)
+	if err != nil {
+		handleCreateBookError(w, err)
+		return
+	}
+	err = h.ba.UpdateBookAuthors(book, authors)
 
 	if err != nil {
 		log.Errorf("could not map book to authors: %v", err)
-		internalServerError(w, "error happened mapping book to author")
+		internalServerError(w, "error happened mapping book to authors")
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+func handleCreateBookError(w http.ResponseWriter, err error) {
+	log.Errorf("error creating book: %v", err)
+	internalServerError(w, "error happened creating book")
 }
 
 type updateBookRequestBody struct {
