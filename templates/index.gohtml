@@ -1,9 +1,102 @@
 {{ define "yield"}}
   <h1 class="title">Index</h1>
 
-  <form>
-    <div class="form-group">
-      <input type="email" class="input" id="exampleFormControlInput1" placeholder="type in book title or author">
-    </div>
-  </form>
+  <div id="app">
+    <section>
+      <div class="control">
+        <label for="book-search-input">Find a book:</label>
+        <input class="input" id="book-search-input" v-model="query" placeholder="edit me" @keyup="getAsyncData">
+            {{/*        {{`{{data}}`}}*/}}
+            {{/*        {{`{{query}}`}}*/}}
+            {{/*        <input*/}}
+            {{/*                class="input"*/}}
+            {{/*                :data="data"*/}}
+            {{/*                placeholder="e.g. Fight Club"*/}}
+            {{/*                field="title"*/}}
+            {{/*                :loading="isFetching"*/}}
+            {{/*                @typing="getAsyncData"*/}}
+            {{/*                @select="option => selected = option">*/}}
+
+            {{/*          <template slot-scope="props">*/}}
+            {{/*            <div class="media">*/}}
+            {{/*              <div class="media-left">*/}}
+            {{/*                <img width="32" :src="`/static/upload/${props.option.Image}`">*/}}
+            {{/*              </div>*/}}
+            {{/*              <div class="media-content">*/}}
+            {{/*                  {{`{{ props.option.Name }}`}}*/}}
+            {{/*                <br>*/}}
+            {{/*              </div>*/}}
+            {{/*            </div>*/}}
+            {{/*          </template>*/}}
+        </input>
+        <div class="results">
+          <div class="card" v-for="item in data" :key="item['fields']['ID']">
+            <div class="card-content">
+              <div class="media">
+                <div class="media-left">
+                  <figure class="image is-48x48">
+                    <img v-bind:src="'/static/upload/' + item['fields']['Image']" alt="Placeholder image">
+                  </figure>
+                </div>
+                <div class="media-content">
+                  <p class="title is-4" ><a :href="'/books/' + item.fields['ID']"><span v-html="item['fragments']['Name'][0]"></span></a></p>
+                  <p class="subtitle is-6">@johnsmith</p>
+                </div>
+              </div>
+
+              <div class="content" v-html="item['fragments']['Description'][0]"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <p class="content"><b>Selected:</b><br/>
+    <pre>{{`{{ selected }}`}}</pre>
+    </p>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+  <script src="https://unpkg.com/buefy/dist/buefy.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"
+          integrity="sha256-qXBd/EfAdjOA2FGrGAG+b3YBn2tn5A6bhz+LSgYD96k=" crossorigin="anonymous"></script>
+  <script>
+      const example = {
+          data() {
+              return {
+                  query: "",
+                  data: [],
+                  selected: null,
+                  isFetching: false
+              }
+          },
+          methods: {
+              // You have to install and import debounce to use it,
+              // it's not mandatory though.
+              getAsyncData: _.debounce(function () {
+                  if (!this.query.length) {
+                      this.data = []
+                      return
+                  }
+                  this.isFetching = true
+                  this.$http.get("http://localhost:3333/api/v1/search?q=" + this.query)
+                      .then(({data}) => {
+                          this.data = []
+                          console.log(data)
+                          data.hits.forEach((item) => this.data.push(item))
+                      })
+                      .catch((error) => {
+                          this.data = []
+                          throw error
+                      })
+                      .finally(() => {
+                          this.isFetching = false
+                      })
+              }, 500)
+          }
+      }
+
+      const app = new Vue(example)
+      app.$mount('#app')
+  </script>
+
 {{end}}

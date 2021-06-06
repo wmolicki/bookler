@@ -61,6 +61,11 @@ type bookDB struct {
 	db *sqlx.DB
 }
 
+type bookQueryModel struct {
+	RawTags string `db:"tags"`
+	Book
+}
+
 func (bd *bookDB) Create(book *Book) error {
 	query := "INSERT INTO books (name, edition, description) VALUES (?, ?, ?)"
 	result, err := bd.db.Exec(query, book.Name, book.Edition, book.Description)
@@ -107,10 +112,7 @@ func (bd *bookDB) Delete(book *Book) error {
 }
 
 func (bd *bookDB) ByID(id uint) (*Book, error) {
-	var queryModel struct {
-		RawTags string `db:"tags"`
-		Book
-	}
+	var queryModel bookQueryModel
 
 	query := "SELECT id, created_at, updated_at, name, edition, description, tags, img FROM books WHERE id = ?;"
 	row := bd.db.QueryRowx(query, id)
@@ -139,15 +141,22 @@ func (bd *bookDB) ByName(name string) (*Book, error) {
 }
 
 func (bd *bookDB) List() ([]*Book, error) {
+	var booksQ []*bookQueryModel
 	var books []*Book
 
-	query := "SELECT id, created_at, updated_at, name, edition, description FROM books;"
+	query := "SELECT id, created_at, updated_at, name, edition, description, img, tags FROM books;"
 
-	err := bd.db.Select(&books, query)
+	err := bd.db.Select(&booksQ, query)
 
 	if err != nil {
 		return nil, err
 	}
+
+	for _, b := range booksQ {
+		b.Book.Tags = strings.Split(b.RawTags, ",")
+		books = append(books, &b.Book)
+	}
+
 	return books, nil
 }
 

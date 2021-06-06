@@ -7,8 +7,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/v2"
 
+	"github.com/wmolicki/bookler/helpers"
 	"github.com/wmolicki/bookler/models"
 )
 
@@ -27,10 +28,10 @@ func NewSearchHandler(bs models.BookService) *SearchHandler {
 }
 
 func (s *SearchHandler) Init() {
-	// index, err := bleve.Open("example.bleve")
-	//index, err := s.CreateNew()
-	//helpers.Must(err)
-	//s.Index = index
+	//index, err := bleve.Open(indexFile)
+	index, err := s.CreateNew()
+	helpers.Must(err)
+	s.Index = index
 }
 
 func (s *SearchHandler) CreateNew() (bleve.Index, error) {
@@ -51,8 +52,13 @@ func (s *SearchHandler) CreateNew() (bleve.Index, error) {
 
 	batch := index.NewBatch()
 
-	for _, b := range books {
+	for i, b := range books {
 		batch.Index(strconv.Itoa(int(b.ID)), b)
+		if i > 0 && i%100 == 0 {
+			index.Batch(batch)
+			fmt.Printf("indexed %d books", batch.Size())
+			batch.Reset()
+		}
 	}
 
 	index.Batch(batch)
@@ -64,8 +70,14 @@ func (s *SearchHandler) CreateNew() (bleve.Index, error) {
 
 func (s *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
-	query := bleve.NewMatchQuery(q)
+	query := bleve.NewFuzzyQuery(q)
 	search := bleve.NewSearchRequest(query)
+	search.Highlight = bleve.NewHighlightWithStyle("html")
+	search.Highlight.AddField("Name")
+	search.Highlight.AddField("Description")
+	//bleve.NewFacetRequest("")
+	search.Fields = []string{"*"}
+
 	searchResults, err := s.Index.Search(search)
 	if err != nil {
 		fmt.Println(err)

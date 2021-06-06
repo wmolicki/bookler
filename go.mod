@@ -3,7 +3,7 @@ module github.com/wmolicki/bookler
 go 1.16
 
 require (
-	github.com/blevesearch/bleve v1.0.14
+	github.com/blevesearch/bleve/v2 v2.0.3 // indirect
 	github.com/go-chi/chi/v5 v5.0.2
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/go-playground/validator v9.31.0+incompatible
