@@ -135,6 +135,41 @@ func (ba *BookAuthorService) UpdateBookAuthors(book *Book, authors []string) err
 	return nil
 }
 
+func (ba *BookAuthorService) BookWithAuthorList() ([]*Book, error) {
+	books, err := ba.bs.List()
+	if err != nil {
+		return nil, err
+	}
+
+	var authors []*BookAuthor
+
+	query := `SELECT a.id as author_id, ba.book_id as book_id, name
+		      FROM authors a JOIN book_author ba ON a.id = ba.author_id`
+
+	if err := ba.db.Select(&authors, query); err != nil {
+		return nil, err
+	}
+
+	bookMap := make(map[uint]*Book)
+
+	for _, b := range books {
+		bookMap[b.ID] = b
+	}
+
+	for _, ba := range authors {
+		b, ok := bookMap[ba.BookID]
+		if !ok {
+			return nil, err
+		}
+		if b.Authors == nil {
+			b.Authors = make([]*BookAuthor, 0, 1)
+		}
+		b.Authors = append(b.Authors, ba)
+	}
+
+	return books, nil
+}
+
 func (ba *BookAuthorService) addAuthor(book *Book, author *Author) error {
 	query := "INSERT INTO book_author (book_id, author_id) VALUES (?, ?)"
 	_, err := ba.db.Exec(query, book.ID, author.ID)

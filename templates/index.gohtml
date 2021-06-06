@@ -6,29 +6,6 @@
       <div class="control">
         <label for="book-search-input">Find a book:</label>
         <input class="input" id="book-search-input" v-model="query" placeholder="edit me" @keyup="getAsyncData">
-            {{/*        {{`{{data}}`}}*/}}
-            {{/*        {{`{{query}}`}}*/}}
-            {{/*        <input*/}}
-            {{/*                class="input"*/}}
-            {{/*                :data="data"*/}}
-            {{/*                placeholder="e.g. Fight Club"*/}}
-            {{/*                field="title"*/}}
-            {{/*                :loading="isFetching"*/}}
-            {{/*                @typing="getAsyncData"*/}}
-            {{/*                @select="option => selected = option">*/}}
-
-            {{/*          <template slot-scope="props">*/}}
-            {{/*            <div class="media">*/}}
-            {{/*              <div class="media-left">*/}}
-            {{/*                <img width="32" :src="`/static/upload/${props.option.Image}`">*/}}
-            {{/*              </div>*/}}
-            {{/*              <div class="media-content">*/}}
-            {{/*                  {{`{{ props.option.Name }}`}}*/}}
-            {{/*                <br>*/}}
-            {{/*              </div>*/}}
-            {{/*            </div>*/}}
-            {{/*          </template>*/}}
-        </input>
         <div class="results">
           <div class="card" v-for="item in data" :key="item['fields']['ID']">
             <div class="card-content">
@@ -38,9 +15,17 @@
                     <img v-bind:src="'/static/upload/' + item['fields']['Image']" alt="Placeholder image">
                   </figure>
                 </div>
-                <div class="media-content">
-                  <p class="title is-4" ><a :href="'/books/' + item.fields['ID']"><span v-html="item['fragments']['Name'][0]"></span></a></p>
-                  <p class="subtitle is-6">@johnsmith</p>
+                <div class="media-content columns">
+                  <div class="column is-three-quarters">
+                    <p class="title is-4" ><a :href="'/books/' + item.fields['ID']"><span v-html="item['fragments']['Name'][0]"></span></a></p>
+                    <p class="subtitle is-6">{{`{{ item.fields['Authors.Name'] }}`}}</p>
+                  </div>
+                  <div class="column">
+                    <span class="tag is-pulled-right">
+                      {{`{{ item.score.toFixed(4) }}`}}
+                    </span>
+                  </div>
+
                 </div>
               </div>
 
@@ -59,11 +44,13 @@
   <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.2"></script>
   <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"
           integrity="sha256-qXBd/EfAdjOA2FGrGAG+b3YBn2tn5A6bhz+LSgYD96k=" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
   <script>
       const example = {
           data() {
+              // console.log(this.$route.query)
               return {
-                  query: "",
+                  query: '',
                   data: [],
                   selected: null,
                   isFetching: false
@@ -95,8 +82,8 @@
           }
       }
 
-      const app = new Vue(example)
-      app.$mount('#app')
+      const app = new Vue(example);
+      app.$mount('#app');
   </script>
 
 {{end}}

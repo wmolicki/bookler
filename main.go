@@ -82,7 +82,7 @@ func main() {
 	r.HandleFunc("/sign_in", u.SignIn).Methods(http.MethodGet)
 	r.HandleFunc("/sign_out", oh.SignOut).Methods(http.MethodPost)
 
-	s := handlers.NewSearchHandler(services.Book)
+	s := handlers.NewSearchHandler(services.BookAuthor)
 	r.HandleFunc("/api/v1/search", s.Search).Methods(http.MethodGet)
 
 	r.HandleFunc("/api/v1/books", b.Index).Methods(http.MethodGet)

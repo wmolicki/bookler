@@ -18,11 +18,11 @@ const indexFile = "example.bleve"
 type SearchHandler struct {
 	Index bleve.Index
 
-	bs models.BookService
+	ba *models.BookAuthorService
 }
 
-func NewSearchHandler(bs models.BookService) *SearchHandler {
-	s := &SearchHandler{bs: bs}
+func NewSearchHandler(ba *models.BookAuthorService) *SearchHandler {
+	s := &SearchHandler{ba: ba}
 	s.Init()
 	return s
 }
@@ -45,7 +45,7 @@ func (s *SearchHandler) CreateNew() (bleve.Index, error) {
 		return nil, err
 	}
 
-	books, err := s.bs.List()
+	books, err := s.ba.BookWithAuthorList()
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,11 @@ func (s *SearchHandler) CreateNew() (bleve.Index, error) {
 
 func (s *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
-	query := bleve.NewFuzzyQuery(q)
+	// query := bleve.NewFuzzyQuery(q)
+	// query := bleve.NewMatchPhraseQuery(q)
+
+	query := bleve.NewQueryStringQuery(fmt.Sprintf("Description:%s~1 Name:\"%s\"", q, q))
+
 	search := bleve.NewSearchRequest(query)
 	search.Highlight = bleve.NewHighlightWithStyle("html")
 	search.Highlight.AddField("Name")
