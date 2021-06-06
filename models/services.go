@@ -25,7 +25,9 @@ type Services struct {
 	UserBook    *UserBookService
 	OauthConfig *oauth2.Config
 	Collections *CollectionsService
-	db          *sqlx.DB
+	// Search      *SearchService
+
+	db *sqlx.DB
 }
 
 func WithDB(driver, dataSourceName string) ServicesConfig {
