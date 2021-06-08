@@ -38,6 +38,7 @@
     <p class="content"><b>Selected:</b><br/>
     <pre>{{`{{ selected }}`}}</pre>
     </p>
+    <router-view></router-view>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
   <script src="https://unpkg.com/buefy/dist/buefy.min.js"></script>
@@ -46,14 +47,30 @@
           integrity="sha256-qXBd/EfAdjOA2FGrGAG+b3YBn2tn5A6bhz+LSgYD96k=" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
   <script>
+      Vue.use(VueRouter)
+      const routes = [];
+      const router = new VueRouter({routes: routes, mode: 'history'});
+
       const example = {
+          mounted() {
+              this.getAsyncData()
+          },
+          router: router,
           data() {
-              // console.log(this.$route.query)
               return {
-                  query: '',
+                  query: this.$route.query.q || '',
                   data: [],
                   selected: null,
                   isFetching: false
+              }
+          },
+          watch: {
+              query: function(newQ, oldQ) {
+                  if (newQ === '') {
+                      this.$router.push({query: {}})
+                  } else {
+                      this.$router.push({query: {q: newQ}})
+                  }
               }
           },
           methods: {
@@ -68,7 +85,6 @@
                   this.$http.get("http://localhost:3333/api/v1/search?q=" + this.query)
                       .then(({data}) => {
                           this.data = []
-                          console.log(data)
                           data.hits.forEach((item) => this.data.push(item))
                       })
                       .catch((error) => {
@@ -81,9 +97,7 @@
               }, 500)
           }
       }
-
-      const app = new Vue(example);
-      app.$mount('#app');
+      const app = new Vue(example).$mount('#app')
   </script>
 
 {{end}}

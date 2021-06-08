@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/blevesearch/bleve/v2"
 
@@ -28,8 +29,8 @@ func NewSearchHandler(ba *models.BookAuthorService) *SearchHandler {
 }
 
 func (s *SearchHandler) Init() {
-	//index, err := bleve.Open(indexFile)
-	index, err := s.CreateNew()
+	index, err := bleve.Open(indexFile)
+	//index, err := s.CreateNew()
 	helpers.Must(err)
 	s.Index = index
 }
@@ -39,7 +40,6 @@ func (s *SearchHandler) CreateNew() (bleve.Index, error) {
 		return nil, err
 	}
 	mapping := bleve.NewIndexMapping()
-	bleve.NewDocumentMapping()
 	index, err := bleve.New(indexFile, mapping)
 	if err != nil {
 		return nil, err
@@ -70,12 +70,43 @@ func (s *SearchHandler) CreateNew() (bleve.Index, error) {
 
 func (s *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
-	// query := bleve.NewFuzzyQuery(q)
-	// query := bleve.NewMatchPhraseQuery(q)
+	q = strings.TrimSpace(q)
 
-	query := bleve.NewQueryStringQuery(fmt.Sprintf("Description:%s~1 Name:\"%s\"", q, q))
+	finalQuery := bleve.NewDisjunctionQuery()
 
-	search := bleve.NewSearchRequest(query)
+	fuzzyQuery := bleve.NewFuzzyQuery(q)
+	fuzzyQuery.SetField("Name")
+	fuzzyQuery.SetBoost(0.75)
+	finalQuery.AddQuery(fuzzyQuery)
+
+	matchQuery := bleve.NewMatchQuery(q)
+	matchQuery.SetBoost(3.0)
+	matchQuery.SetField("Name")
+	matchQuery.Analyzer = "en"
+	finalQuery.AddQuery(matchQuery)
+
+	termQ := bleve.NewTermQuery(q)
+	termQ.SetBoost(3.0)
+	finalQuery.AddQuery(termQ)
+
+	terms := strings.Split(q, " ")
+	for _, term := range terms {
+		prefixQuery := bleve.NewPrefixQuery(term)
+		prefixQuery.SetField("Name")
+		prefixQuery.SetBoost(1.0)
+
+		finalQuery.AddQuery(prefixQuery)
+	}
+
+	matchPhraseQuery := bleve.NewMatchPhraseQuery(q)
+	matchPhraseQuery.Analyzer = "en"
+	matchPhraseQuery.SetBoost(2.0)
+
+	finalQuery.AddQuery(matchPhraseQuery)
+
+	//. query := bleve.NewQueryStringQuery(fmt.Sprintf("Description:%s~1 Name:%s~1 Name:\"%s\"^10", q, q))
+
+	search := bleve.NewSearchRequest(finalQuery)
 	search.Highlight = bleve.NewHighlightWithStyle("html")
 	search.Highlight.AddField("Name")
 	search.Highlight.AddField("Description")
