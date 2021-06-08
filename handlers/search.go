@@ -71,6 +71,7 @@ func (s *SearchHandler) CreateNew() (bleve.Index, error) {
 func (s *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
 	q = strings.TrimSpace(q)
+	q = strings.ToLower(q)
 
 	finalQuery := bleve.NewDisjunctionQuery()
 
@@ -79,13 +80,21 @@ func (s *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	fuzzyQuery.SetBoost(0.75)
 	finalQuery.AddQuery(fuzzyQuery)
 
+	fuzzyDescriptionQuery := bleve.NewFuzzyQuery(q)
+	fuzzyDescriptionQuery.SetField("Description")
+	fuzzyDescriptionQuery.SetBoost(0.35)
+	finalQuery.AddQuery(fuzzyDescriptionQuery)
+
+	// match with some analysis
 	matchQuery := bleve.NewMatchQuery(q)
-	matchQuery.SetBoost(3.0)
+	matchQuery.SetBoost(2.0)
 	matchQuery.SetField("Name")
 	matchQuery.Analyzer = "en"
 	finalQuery.AddQuery(matchQuery)
 
+	// exact match
 	termQ := bleve.NewTermQuery(q)
+	termQ.SetField("Name")
 	termQ.SetBoost(3.0)
 	finalQuery.AddQuery(termQ)
 
@@ -93,16 +102,23 @@ func (s *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	for _, term := range terms {
 		prefixQuery := bleve.NewPrefixQuery(term)
 		prefixQuery.SetField("Name")
-		prefixQuery.SetBoost(1.0)
-
+		prefixQuery.SetBoost(1)
 		finalQuery.AddQuery(prefixQuery)
+
+		fuzzyTermQuery := bleve.NewFuzzyQuery(term)
+		fuzzyTermQuery.SetBoost(0.85)
+		fuzzyTermQuery.SetField("Name")
+		fuzzyQuery.SetPrefix(2)
+		fuzzyTermQuery.SetFuzziness(2)
+		finalQuery.AddQuery(fuzzyTermQuery)
 	}
 
-	matchPhraseQuery := bleve.NewMatchPhraseQuery(q)
-	matchPhraseQuery.Analyzer = "en"
-	matchPhraseQuery.SetBoost(2.0)
-
-	finalQuery.AddQuery(matchPhraseQuery)
+	if len(terms) > 1 {
+		matchPhraseQuery := bleve.NewMatchPhraseQuery(q)
+		matchPhraseQuery.Analyzer = "en"
+		matchPhraseQuery.SetBoost(3.0)
+		finalQuery.AddQuery(matchPhraseQuery)
+	}
 
 	//. query := bleve.NewQueryStringQuery(fmt.Sprintf("Description:%s~1 Name:%s~1 Name:\"%s\"^10", q, q))
 
@@ -110,6 +126,7 @@ func (s *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	search.Highlight = bleve.NewHighlightWithStyle("html")
 	search.Highlight.AddField("Name")
 	search.Highlight.AddField("Description")
+	search.Size = 10
 	//bleve.NewFacetRequest("")
 	search.Fields = []string{"*"}
 

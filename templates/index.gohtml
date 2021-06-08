@@ -82,7 +82,7 @@
                       return
                   }
                   this.isFetching = true
-                  this.$http.get("http://localhost:3333/api/v1/search?q=" + this.query)
+                  this.$http.get("/api/v1/search?q=" + this.query)
                       .then(({data}) => {
                           this.data = []
                           data.hits.forEach((item) => this.data.push(item))
